@@ -204,12 +204,34 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
           : [];
       setLongestRunning(runningData);
 
-      const resourcesData: Record<string, number> | null =
-        resources && typeof resources === "object" && "data" in resources
-          ? (resources.data as Record<string, number>)
-          : resources && typeof resources === "object"
-          ? (resources as Record<string, number>)
-          : null;
+      // Normalize resource utilization - handle wrapped response, string numbers, and null values
+      let resourcesData: Record<string, number> | null = null;
+      if (resources) {
+        const rawData =
+          typeof resources === "object" && "data" in resources
+            ? (resources.data as Record<string, string | number | null>)
+            : (resources as Record<string, string | number | null>);
+
+        if (rawData && typeof rawData === "object") {
+          const normalized: Record<string, number> = {};
+          Object.entries(rawData).forEach(([key, value]) => {
+            // Skip null values
+            if (value !== null && value !== undefined) {
+              // Convert string numbers to numbers
+              if (typeof value === "string") {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  normalized[key] = numValue;
+                }
+              } else if (typeof value === "number") {
+                normalized[key] = value;
+              }
+            }
+          });
+          resourcesData =
+            Object.keys(normalized).length > 0 ? normalized : null;
+        }
+      }
       setResourceUtilization(resourcesData);
 
       const failureRateData: Array<GenericRecord> =
@@ -251,18 +273,41 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
           : Array.isArray(owners)
           ? (owners as Array<GenericRecord>)
           : [];
-      const normalizedOwners = ownersData.map((item: GenericRecord) => ({
-        label:
-          item.owner !== null && item.owner !== undefined
-            ? (item.owner as string)
-            : (item.label as string) || "Unassigned",
-        count:
-          typeof item.count === "string"
-            ? parseInt(item.count as string, 10) || 0
-            : typeof item.count === "number"
-            ? (item.count as number)
-            : 0,
-      }));
+      const normalizedOwners = ownersData.map((item: GenericRecord) => {
+        // Handle owner field - check for owner, label, or technical_owner_id
+        let ownerLabel: string;
+        if (
+          item.owner !== null &&
+          item.owner !== undefined &&
+          item.owner !== ""
+        ) {
+          ownerLabel = item.owner as string;
+        } else if (
+          item.label !== null &&
+          item.label !== undefined &&
+          item.label !== ""
+        ) {
+          ownerLabel = item.label as string;
+        } else if (
+          item.technical_owner_id !== null &&
+          item.technical_owner_id !== undefined
+        ) {
+          // If owner is null but technical_owner_id exists, display it
+          ownerLabel = `Owner ID: ${item.technical_owner_id}`;
+        } else {
+          ownerLabel = "Unassigned";
+        }
+
+        return {
+          label: ownerLabel,
+          count:
+            typeof item.count === "string"
+              ? parseInt(item.count as string, 10) || 0
+              : typeof item.count === "number"
+              ? (item.count as number)
+              : 0,
+        };
+      });
       setOwnerCounts(normalizedOwners);
     } catch (err) {
       console.error("Failed to load analytics:", err);

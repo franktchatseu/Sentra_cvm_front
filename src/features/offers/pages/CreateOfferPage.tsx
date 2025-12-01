@@ -16,6 +16,11 @@ import {
   Palette,
   BarChart,
   Eye,
+  Package,
+  Settings,
+  FileText,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import {
   CreateOfferRequest,
@@ -36,7 +41,7 @@ import OfferTrackingStep from "../components/OfferTrackingStep";
 import OfferRewardStep from "../components/OfferRewardStep";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import MultiCategorySelector from "../../../shared/components/MultiCategorySelector";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, components } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import ProgressStepper, {
@@ -804,8 +809,8 @@ function ReviewStep({
     validationErrors && Object.keys(validationErrors).length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="mt-8 mb-8">
+    <div className="space-y-8">
+      <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Review & Create
         </h2>
@@ -856,450 +861,383 @@ function ReviewStep({
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Offer Summary */}
-        <div
-          className="rounded-md p-6"
-          style={{ backgroundColor: `${color.primary.action}10` }}
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Offer Summary
-          </h3>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            icon: Palette,
+            label: "Creatives",
+            value: creatives.length.toString(),
+          },
+          {
+            icon: Package,
+            label: "Products",
+            value: formData.primary_product_id ? "1" : "0",
+          },
+          {
+            icon: BarChart,
+            label: "Tracking Sources",
+            value: trackingSources.length.toString(),
+          },
+          {
+            icon: DollarSign,
+            label: "Rewards",
+            value: rewards.length.toString(),
+          },
+        ].map(({ icon: Icon, label, value }) => (
+          <div
+            key={label}
+            className="rounded-xl bg-white shadow-sm border border-gray-100 p-5 flex items-center gap-4"
+          >
+            <div className="w-12 h-12 flex items-center justify-center">
+              <Icon
+                className="w-6 h-6"
+                style={{ color: color.primary.accent }}
+              />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">
+                {label}
+              </p>
+              <p className="text-2xl font-semibold text-gray-900">{value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-          {/* Basic Information */}
-          <div className="space-y-4 mb-6">
-            <h4 className="font-medium text-gray-700 border-b border-gray-200 pb-2">
-              Basic Information
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Name:</span>
-                <span className="font-medium">{formData.name}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="space-y-6 lg:col-span-2">
+          {/* Offer Details */}
+          <div className={components.card.surface}>
+            <h3 className={`${tw.cardTitle} ${tw.textPrimary} mb-4`}>
+              Offer Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+              <div>
+                <div className={`${tw.caption} ${tw.textSecondary} mb-1`}>
+                  Name
+                </div>
+                <div className={`font-medium ${tw.textPrimary}`}>
+                  {formData.name || "Untitled offer"}
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Offer Type:</span>
-                <span className="font-medium">
+              <div>
+                <div className={`${tw.caption} ${tw.textSecondary} mb-1`}>
+                  Offer Type
+                </div>
+                <div className={`font-medium ${tw.textPrimary}`}>
                   {formData.offer_type
                     ? formData.offer_type.charAt(0).toUpperCase() +
-                      formData.offer_type.slice(1)
+                      formData.offer_type.slice(1).replace(/_/g, " ")
                     : "Not selected"}
-                </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Catalog:</span>
-                <span className="font-medium">
+              <div>
+                <div className={`${tw.caption} ${tw.textSecondary} mb-1`}>
+                  Catalog
+                </div>
+                <div className={`font-medium ${tw.textPrimary}`}>
                   {formData.category_id
                     ? offerCategories?.find(
                         (cat: OfferCategoryType) =>
                           cat.id === formData.category_id
                       )?.name || `Catalog ${formData.category_id}`
                     : "Not selected"}
-                </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Max Usage Per Customer:</span>
-                <span className="font-medium">
-                  {formData.max_usage_per_customer || "Not set"}
-                </span>
+              <div>
+                <div className={`${tw.caption} ${tw.textSecondary} mb-1`}>
+                  Max Usage Per Customer
+                </div>
+                <div className={`font-medium ${tw.textPrimary}`}>
+                  {formData.max_usage_per_customer || "Unlimited"}
+                </div>
               </div>
-              <div className="flex justify-between col-span-2">
-                <span className="text-gray-600">Description:</span>
-                <span className="font-medium text-right max-w-md">
-                  {formData.description || "No description"}
-                </span>
-              </div>
+              {formData.description && (
+                <div className="md:col-span-2">
+                  <div className={`${tw.caption} ${tw.textSecondary} mb-1`}>
+                    Description
+                  </div>
+                  <div className={`${tw.textPrimary} whitespace-pre-wrap`}>
+                    {formData.description}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Offer Creative Summary */}
-          <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-md border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Offer Creatives
-                </h3>
-                <span className="text-sm text-gray-500">
-                  {creatives.length}{" "}
-                  {creatives.length === 1 ? "creative" : "creatives"}
-                </span>
+          {/* Offer Creatives */}
+          <div className={components.card.surface}>
+            <h3 className={`${tw.cardTitle} ${tw.textPrimary} mb-3`}>
+              Offer Creatives
+            </h3>
+            {creatives.length === 0 ? (
+              <div className="text-sm text-gray-500">
+                No creatives have been configured.
               </div>
-              {creatives.length === 0 ? (
-                <p className="text-gray-500 text-sm">No creatives configured</p>
-              ) : (
-                <div className="space-y-6">
-                  {creatives.map((creative) => {
-                    const isEditing = editingCreativeId === creative.id;
-                    const displayCreative = isEditing
-                      ? editingCreative!
-                      : creative;
+            ) : (
+              <div className="space-y-6">
+                {creatives.map((creative) => {
+                  const isEditing = editingCreativeId === creative.id;
+                  const displayCreative = isEditing
+                    ? editingCreative!
+                    : creative;
 
-                    // Parse variables - this will recompute on every render
-                    const variables = parseVariables(displayCreative.variables);
+                  // Parse variables - this will recompute on every render
+                  const variables = parseVariables(displayCreative.variables);
 
-                    // Compute rendered values - these update in real-time
-                    const renderedTitle = replaceVariables(
-                      displayCreative.title || "",
-                      variables
-                    );
-                    const renderedTextBody = replaceVariables(
-                      displayCreative.text_body || "",
-                      variables
-                    );
-                    const renderedHtmlBody = replaceVariables(
-                      displayCreative.html_body || "",
-                      variables
-                    );
+                  // Compute rendered values - these update in real-time
+                  const renderedTitle = replaceVariables(
+                    displayCreative.title || "",
+                    variables
+                  );
+                  const renderedTextBody = replaceVariables(
+                    displayCreative.text_body || "",
+                    variables
+                  );
+                  const renderedHtmlBody = replaceVariables(
+                    displayCreative.html_body || "",
+                    variables
+                  );
 
-                    return (
-                      <div
-                        key={creative.id}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-gray-900">
-                                {displayCreative.channel}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                ({displayCreative.locale})
-                              </span>
-                            </div>
+                  return (
+                    <div
+                      key={creative.id}
+                      className="flex items-start justify-between p-4 rounded-md border border-gray-100 bg-white mb-3"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <Palette
+                          className="w-5 h-5"
+                          style={{ color: color.primary.accent }}
+                        />
+                        <div className="flex-1">
+                          <div
+                            className={`text-sm font-semibold ${tw.textPrimary}`}
+                          >
+                            {displayCreative.channel} ({displayCreative.locale})
                           </div>
-                          {!isEditing ? // <button
-                          //   onClick={() => handleEditCreative(creative)}
-                          //   className="text-sm px-3 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-                          // >
-                          //   Edit
-                          // </button>
-                          null : (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleSaveCreative}
-                                className="text-sm px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={handleCancelEdit}
-                                className="text-sm px-3 py-1 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {isEditing ? (
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Title
-                              </label>
-                              <input
-                                type="text"
-                                value={displayCreative.title || ""}
-                                onChange={(e) =>
-                                  setEditingCreative({
-                                    ...displayCreative,
-                                    title: e.target.value,
-                                  })
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Text Body
-                              </label>
-                              <textarea
-                                value={displayCreative.text_body || ""}
-                                onChange={(e) =>
-                                  setEditingCreative({
-                                    ...displayCreative,
-                                    text_body: e.target.value,
-                                  })
-                                }
-                                rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                              />
-                            </div>
-                            {(displayCreative.channel === "Email" ||
-                              displayCreative.channel === "Web") && (
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  HTML Body
-                                </label>
-                                <textarea
-                                  value={displayCreative.html_body || ""}
-                                  onChange={(e) =>
-                                    setEditingCreative({
-                                      ...displayCreative,
-                                      html_body: e.target.value,
-                                    })
-                                  }
-                                  rows={4}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
-                                />
-                              </div>
-                            )}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Variables (JSON)
-                              </label>
-                              <textarea
-                                value={
-                                  typeof displayCreative.variables === "string"
-                                    ? displayCreative.variables
-                                    : JSON.stringify(
-                                        displayCreative.variables || {},
-                                        null,
-                                        2
-                                      )
-                                }
-                                onChange={(e) => {
-                                  try {
-                                    const parsed = JSON.parse(e.target.value);
-                                    setEditingCreative({
-                                      ...displayCreative,
-                                      variables: parsed,
-                                    });
-                                  } catch {
-                                    // Invalid JSON - store as string temporarily
-                                    // User can keep typing to fix it
-                                    setEditingCreative({
-                                      ...displayCreative,
-                                      variables: e.target.value as any,
-                                    });
-                                  }
-                                }}
-                                rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
-                                placeholder='{"variable": "value"}'
-                              />
-                              <p className="text-xs text-gray-500 mt-1">
-                                {(() => {
-                                  try {
-                                    const testValue =
-                                      typeof displayCreative.variables ===
-                                      "string"
-                                        ? displayCreative.variables
-                                        : JSON.stringify(
-                                            displayCreative.variables || {}
-                                          );
-                                    JSON.parse(testValue);
-                                    return (
-                                      <span className="text-green-600">
-                                        ✓ Valid JSON
-                                      </span>
-                                    );
-                                  } catch {
-                                    return (
-                                      <span className="text-red-600">
-                                        ⚠ Invalid JSON
-                                      </span>
-                                    );
-                                  }
-                                })()}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {renderedTitle && (
-                              <div>
-                                <span className="text-xs font-medium text-gray-500">
-                                  Title:
-                                </span>
-                                <p className="text-sm text-gray-900 mt-1">
-                                  {renderedTitle}
-                                </p>
-                              </div>
-                            )}
-                            {renderedTextBody && (
-                              <div>
-                                <span className="text-xs font-medium text-gray-500">
-                                  Text Body:
-                                </span>
-                                <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">
-                                  {renderedTextBody}
-                                </p>
-                              </div>
-                            )}
-                            {displayCreative.variables && (
-                              <div>
-                                <span className="text-xs font-medium text-gray-500">
-                                  Variables:
-                                </span>
-                                <pre className="text-xs text-gray-600 mt-1 bg-gray-50 p-2 rounded overflow-x-auto">
-                                  {JSON.stringify(variables, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Preview */}
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">
-                            Preview
-                          </h4>
-                          {(displayCreative.channel === "SMS" ||
-                            displayCreative.channel === "SMS Flash") && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div
-                                key={`smartphone-${creative.id}-${renderedTextBody}-${renderedTitle}`}
-                              >
-                                <p className="text-xs text-gray-500 mb-2">
-                                  Smartphone
-                                </p>
-                                <SMSSmartphonePreview
-                                  message={renderedTextBody || renderedTitle}
-                                  title={renderedTitle}
-                                />
-                              </div>
-                              <div
-                                key={`feature-${creative.id}-${renderedTextBody}-${renderedTitle}`}
-                              >
-                                <p className="text-xs text-gray-500 mb-2">
-                                  Feature Phone
-                                </p>
-                                <SMSButtonPhonePreview
-                                  message={renderedTextBody || renderedTitle}
-                                  title={renderedTitle}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          {displayCreative.channel === "Email" && (
-                            <div
-                              key={`email-${creative.id}-${renderedHtmlBody}-${renderedTextBody}-${renderedTitle}`}
-                            >
-                              <EmailLaptopPreview
-                                title={renderedTitle}
-                                htmlBody={renderedHtmlBody}
-                                textBody={renderedTextBody}
-                              />
+                          {renderedTitle && (
+                            <div className={`text-xs ${tw.textSecondary} mt-1`}>
+                              {renderedTitle}
                             </div>
                           )}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Tracking Summary */}
-          <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-md border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Tracking Configuration
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tracking Sources:</span>
-                  <span className="font-medium">{trackingSources.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Active Sources:</span>
-                  <span className="font-medium">
-                    {trackingSources.filter((s) => s.enabled).length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Rules:</span>
-                  <span className="font-medium">
-                    {trackingSources.reduce(
-                      (total, source) => total + source.rules.length,
-                      0
-                    )}
-                  </span>
-                </div>
+                      {!isEditing ? null : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveCreative}
+                            className="text-sm px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-sm px-3 py-1 text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Rewards Summary */}
-          <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-md border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Offer Rewards
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Rewards:</span>
-                  <span className="font-medium">{rewards.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Reward Types:</span>
-                  <span className="font-medium">
-                    {rewards.length > 0
-                      ? [...new Set(rewards.map((r) => r.type))].join(", ")
-                      : "None configured"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Rules:</span>
-                  <span className="font-medium">
-                    {rewards.reduce(
-                      (total, reward) => total + reward.rules.length,
-                      0
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Selected Product */}
-          <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-md border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Selected Product
-              </h3>
-              {formData.primary_product_id ? (
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <span className="text-sm text-gray-700">
+          {/* Products */}
+          <div className={components.card.surface}>
+            <h3 className={`${tw.cardTitle} ${tw.textPrimary} mb-3`}>
+              Products
+            </h3>
+            {formData.primary_product_id ? (
+              <div className="flex items-center justify-between p-3 rounded-md border border-gray-100 bg-white">
+                <div className="flex items-center gap-3">
+                  <Package
+                    className="w-5 h-5"
+                    style={{ color: color.primary.accent }}
+                  />
+                  <div className={`text-sm font-medium ${tw.textPrimary}`}>
                     Product ID: {formData.primary_product_id}
-                  </span>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-gray-500 text-sm">No product selected</p>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">
+                No products have been selected.
+              </div>
+            )}
           </div>
 
-          {/* Settings */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-700 border-b border-gray-200 pb-2">
-              Settings
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Status:</span>
-                <span className="font-medium capitalize">Draft</span>
+          {/* Tracking Configuration */}
+          <div className={components.card.surface}>
+            <h3 className={`${tw.cardTitle} ${tw.textPrimary} mb-3`}>
+              Tracking Configuration
+            </h3>
+            {trackingSources.length === 0 ? (
+              <div className="text-sm text-gray-500">
+                No tracking sources have been configured.
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Approval:</span>
-                <span className="font-medium capitalize">Pending</span>
+            ) : (
+              <div className="space-y-3">
+                {trackingSources.map((source) => (
+                  <div
+                    key={source.id}
+                    className="flex items-center justify-between p-3 rounded-md border border-gray-100 bg-white"
+                  >
+                    <div className="flex items-center gap-3">
+                      <BarChart
+                        className="w-5 h-5"
+                        style={{ color: color.primary.accent }}
+                      />
+                      <div>
+                        <div
+                          className={`text-sm font-semibold ${tw.textPrimary}`}
+                        >
+                          {source.name}
+                        </div>
+                        <div className={`text-xs ${tw.textSecondary}`}>
+                          {source.type} • {source.rules.length} rules
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div
+                        className="text-xs font-medium"
+                        style={{
+                          color: source.enabled
+                            ? color.primary.accent
+                            : "#9CA3AF",
+                        }}
+                      >
+                        {source.enabled ? "Active" : "Inactive"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Reusable:</span>
-                <span className="font-medium">
-                  {formData.is_reusable ? "Yes" : "No"}
-                </span>
+            )}
+          </div>
+
+          {/* Rewards */}
+          <div className={components.card.surface}>
+            <h3 className={`${tw.cardTitle} ${tw.textPrimary} mb-3`}>
+              Offer Rewards
+            </h3>
+            {rewards.length === 0 ? (
+              <div className="text-sm text-gray-500">
+                No rewards have been configured.
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Multi-language:</span>
-                <span className="font-medium">
-                  {formData.supports_multi_language ? "Yes" : "No"}
-                </span>
+            ) : (
+              <div className="space-y-3">
+                {rewards.map((reward) => (
+                  <div
+                    key={reward.id}
+                    className="flex items-center justify-between p-3 rounded-md border border-gray-100 bg-white"
+                  >
+                    <div className="flex items-center gap-3">
+                      <DollarSign
+                        className="w-5 h-5"
+                        style={{ color: color.primary.accent }}
+                      />
+                      <div>
+                        <div
+                          className={`text-sm font-semibold ${tw.textPrimary}`}
+                        >
+                          {reward.name}
+                        </div>
+                        <div className={`text-xs ${tw.textSecondary}`}>
+                          {reward.type} • {reward.rules.length} rules
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
+
+        {/* Sidebar */}
+        <aside className="space-y-4">
+          <div className="rounded-md border border-gray-200 bg-white shadow-sm p-5 space-y-3 text-sm">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Offer Settings
+            </h3>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Status</span>
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                Draft
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Reusable</span>
+              <span className="font-medium text-gray-900">
+                {formData.is_reusable ? "Yes" : "No"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Multi-language</span>
+              <span className="font-medium text-gray-900">
+                {formData.supports_multi_language ? "Yes" : "No"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Max Usage</span>
+              <span className="font-medium text-gray-900">
+                {formData.max_usage_per_customer || "Unlimited"}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-md border border-gray-200 bg-white shadow-sm p-5 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Readiness Checklist
+            </h3>
+            <ul className="space-y-2 text-sm">
+              {[
+                {
+                  label: "Basic information completed",
+                  complete: Boolean(
+                    formData.name && formData.offer_type && formData.category_id
+                  ),
+                },
+                {
+                  label: "Creatives configured",
+                  complete: creatives.length > 0,
+                },
+                {
+                  label: "Products selected",
+                  complete: Boolean(formData.primary_product_id),
+                },
+                {
+                  label: "Tracking configured",
+                  complete: trackingSources.length > 0,
+                },
+              ].map((item) => (
+                <li key={item.label} className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${
+                      item.complete
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {item.complete ? "✓" : "•"}
+                  </span>
+                  <span
+                    className={
+                      item.complete ? "text-gray-900" : "text-gray-500"
+                    }
+                  >
+                    {item.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
       </div>
     </div>
   );

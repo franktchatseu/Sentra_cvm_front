@@ -615,6 +615,9 @@ export default function SegmentManagementPage() {
           `Segment "${segment.name}" has been created. Computing members...`
         );
 
+        // Small delay to ensure segment is fully created in backend
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         // Perform full recompute for new segment
         await segmentService.recomputeSegmentMembers({
           segment_id: segment.id,
@@ -629,11 +632,18 @@ export default function SegmentManagementPage() {
           `Segment "${segment.name}" has been created and computed successfully`
         );
       } catch (err: unknown) {
-        // Segment was created but recompute failed - still show success for creation
+        // Segment was created but recompute failed - show actual error
         await loadSegments();
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Unknown error occurred during computation";
+
+        console.error("Recompute error:", err);
+
         showError(
           "Computation failed",
-          `Segment "${segment.name}" was created but computation failed. You can manually recompute it later.`
+          `Segment "${segment.name}" was created but computation failed: ${errorMessage}. You can manually recompute it later.`
         );
       }
     } else {

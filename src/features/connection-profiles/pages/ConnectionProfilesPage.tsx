@@ -514,34 +514,18 @@ export default function ConnectionProfilesPage() {
     const expired = validTo ? validTo < now : false;
 
     if (!profile.is_active) {
-      return (
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-          Inactive
-        </span>
-      );
+      return <span className="text-sm font-medium text-black">Inactive</span>;
     }
 
     if (expired) {
-      return (
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          Expired
-        </span>
-      );
+      return <span className="text-sm font-medium text-black">Expired</span>;
     }
 
     if (profile.last_health_check_status === "unhealthy") {
-      return (
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          Unhealthy
-        </span>
-      );
+      return <span className="text-sm font-medium text-black">Unhealthy</span>;
     }
 
-    return (
-      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-        Active
-      </span>
-    );
+    return <span className="text-sm font-medium text-black">Active</span>;
   };
 
   const statsCards = [
@@ -789,7 +773,7 @@ export default function ConnectionProfilesPage() {
               style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
             >
               <thead style={{ background: color.surface.tableHeader }}>
-                <tr className="text-left text-xs uppercase tracking-wide text-black">
+                <tr className="text-left text-sm uppercase tracking-wide text-black">
                   {isSelectionMode && (
                     <th
                       className="px-3 py-3 text-sm font-medium whitespace-nowrap"

@@ -307,7 +307,7 @@ export default function ConnectionProfileDetailsPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+              <h1 className="text-xl font-semibold text-black">
                 {profile.profile_name}
               </h1>
             </div>
@@ -347,7 +347,7 @@ export default function ConnectionProfileDetailsPage() {
             <div className="relative" ref={moreMenuRef}>
               <button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="inline-flex items-center gap-2 justify-center rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-black hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-2 justify-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                 title="More actions"
               >
                 <MoreVertical size={16} />
@@ -443,12 +443,9 @@ export default function ConnectionProfileDetailsPage() {
               </div>
               <div>
                 <label className="text-sm text-gray-600">Connection Type</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Icon className="w-4 h-4 text-gray-500" />
-                  <span className="font-medium text-gray-900">
-                    {profile.connection_type}
-                  </span>
-                </div>
+                <p className="font-medium text-gray-900 mt-1">
+                  {profile.connection_type}
+                </p>
               </div>
               <div>
                 <label className="text-sm text-gray-600">Environment</label>
