@@ -116,15 +116,16 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 }
 
 export interface ProductStats {
-  total_products: number;
-  active_products: number;
-  inactive_products: number;
-  products_requiring_inventory: number;
-  products_with_low_inventory: number;
-  average_price: number;
-  total_inventory_value: number;
-  products_by_currency: Record<string, number>;
-  products_by_category: Array<{
+  total_products: number | string;
+  active_products: number | string;
+  inactive_products?: number | string;
+  products_requiring_inventory?: number | string;
+  products_with_low_inventory?: number | string;
+  avg_price?: number | string; // Backend returns this as string
+  average_price?: number | string; // Legacy field for compatibility
+  total_inventory_value?: number | string;
+  products_by_currency?: Record<string, number>;
+  products_by_category?: Array<{
     category_id: number;
     category_name: string;
     product_count: number;

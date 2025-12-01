@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Target, Users, Gift, Calendar, Eye } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
@@ -119,6 +119,7 @@ export default function CreateCampaignPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
   const [isLoadingCampaign, setIsLoadingCampaign] = useState(false);
+  const hasRestoredDataRef = useRef(false);
 
   // Get params from URL
   const categoryIdParam = searchParams.get("categoryId");
@@ -316,8 +317,14 @@ export default function CreateCampaignPage() {
 
   // Restore campaign data when returning from offer creation
   useEffect(() => {
+    // Prevent multiple restorations - check both ref and sessionStorage flag
+    const alreadyRestored =
+      sessionStorage.getItem("campaignDataRestored") === "true";
+    if (hasRestoredDataRef.current || alreadyRestored) {
+      return;
+    }
+
     // First check if returning from offer creation - restore saved campaign data
-    // This should run regardless of edit/duplicate mode
     const returnFromOfferCreate = searchParams.get("returnFromOfferCreate");
     const stepParam = searchParams.get("step");
 
@@ -326,16 +333,22 @@ export default function CreateCampaignPage() {
       !id &&
       !duplicateIdParam
     ) {
+      // Mark as restored immediately to prevent loops (both ref and sessionStorage)
+      hasRestoredDataRef.current = true;
+      sessionStorage.setItem("campaignDataRestored", "true");
+
       const savedData = sessionStorage.getItem("campaignFormData");
-      console.log("Checking for saved campaign data. Found:", !!savedData);
 
       if (savedData) {
         try {
           const campaignData = JSON.parse(savedData);
+
+          // REMOVE saved data IMMEDIATELY to prevent loops
+          sessionStorage.removeItem("campaignFormData");
+
           console.log("Restoring campaign data:", {
             formData: campaignData.formData,
             segmentsCount: campaignData.selectedSegments?.length || 0,
-            segments: campaignData.selectedSegments,
             offersCount: campaignData.selectedOffers?.length || 0,
             mappingsCount: campaignData.segmentOfferMappings?.length || 0,
           });
@@ -377,6 +390,8 @@ export default function CreateCampaignPage() {
           return; // Exit early to prevent loading campaign data
         } catch (error) {
           console.error("Failed to restore campaign data:", error);
+          // Remove saved data even on error to prevent loops
+          sessionStorage.removeItem("campaignFormData");
           setCurrentStep(3);
 
           // Clean up URL parameters even on error
@@ -387,7 +402,9 @@ export default function CreateCampaignPage() {
           return;
         }
       } else {
-        console.log("No saved campaign data found in sessionStorage");
+        // No saved data, just clean up URL and set step
+        hasRestoredDataRef.current = true;
+        sessionStorage.setItem("campaignDataRestored", "true");
         setCurrentStep(3);
         // Clean up URL parameters
         const newParams = new URLSearchParams(searchParams);
@@ -399,12 +416,12 @@ export default function CreateCampaignPage() {
     }
 
     // Then handle edit/duplicate mode (only if not returning from offer creation)
-    if (id) {
+    if (id && !hasRestoredDataRef.current) {
       // Edit mode - modifying existing campaign
       setIsEditMode(true);
       setIsDuplicateMode(false);
       loadCampaignData(id, false);
-    } else if (duplicateIdParam) {
+    } else if (duplicateIdParam && !hasRestoredDataRef.current) {
       // Duplicate mode - creating new campaign from existing one
       setIsEditMode(false);
       setIsDuplicateMode(true);
@@ -799,6 +816,8 @@ export default function CreateCampaignPage() {
       // Clear campaign flow tracking and saved data when campaign is created/updated
       sessionStorage.removeItem("campaignFlowCreatedOffers");
       sessionStorage.removeItem("campaignFormData");
+      sessionStorage.removeItem("offerModalAutoOpened");
+      sessionStorage.removeItem("campaignDataRestored");
 
       navigate("/dashboard/campaigns");
     } catch (error) {
@@ -955,6 +974,8 @@ export default function CreateCampaignPage() {
     // Clear campaign flow tracking and saved data when cancelling
     sessionStorage.removeItem("campaignFlowCreatedOffers");
     sessionStorage.removeItem("campaignFormData");
+    sessionStorage.removeItem("offerModalAutoOpened");
+    sessionStorage.removeItem("campaignDataRestored");
     navigate("/dashboard/campaigns");
   };
 

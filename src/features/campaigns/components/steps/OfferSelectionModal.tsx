@@ -72,7 +72,8 @@ export default function OfferSelectionModal({
       setTempSelectedOffers(selectedOffers);
       loadOffers();
     }
-  }, [isOpen, selectedOffers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // Only depend on isOpen to prevent loops
 
   const loadOffers = async () => {
     try {
@@ -88,19 +89,42 @@ export default function OfferSelectionModal({
         : [];
 
       // Fetch only active and approved offers (standard offers)
-      const [activeResponse, approvedResponse] = await Promise.all([
-        offerService.getActiveOffers({
-          limit: 100,
-          skipCache: true,
-        }),
-        offerService.getApprovedOffers({
-          limit: 100,
-          skipCache: true,
-        }),
-      ]);
+      // Handle errors gracefully so we can still show campaign flow offers
+      let activeOffers: Offer[] = [];
+      let approvedOffers: Offer[] = [];
 
-      const activeOffers = activeResponse.data || [];
-      const approvedOffers = approvedResponse.data || [];
+      try {
+        const [activeResponse, approvedResponse] = await Promise.allSettled([
+          offerService.getActiveOffers({
+            limit: 100,
+            skipCache: true,
+          }),
+          offerService.getApprovedOffers({
+            limit: 100,
+            skipCache: true,
+          }),
+        ]);
+
+        if (activeResponse.status === "fulfilled") {
+          activeOffers = activeResponse.value.data || [];
+        } else {
+          console.warn("Failed to load active offers:", activeResponse.reason);
+        }
+
+        if (approvedResponse.status === "fulfilled") {
+          approvedOffers = approvedResponse.value.data || [];
+        } else {
+          console.warn(
+            "Failed to load approved offers:",
+            approvedResponse.reason
+          );
+        }
+      } catch (err) {
+        console.warn(
+          "Error fetching standard offers, continuing with campaign flow offers only:",
+          err
+        );
+      }
 
       // Create a map to store full Offer objects with status
       const offersMap = new Map<number, Offer>();

@@ -74,7 +74,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header
-      className="sticky top-0 z-40 m-0 p-0"
+      className="sticky top-0 z-[100] m-0 p-0"
       style={{
         background: `linear-gradient(to bottom, ${color.gradients.sidebar.top} 0%, ${color.gradients.sidebar.middle} 70%, ${color.gradients.sidebar.bottom} 100%)`,
       }}

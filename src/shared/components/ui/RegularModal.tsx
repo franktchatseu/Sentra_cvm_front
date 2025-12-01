@@ -64,7 +64,7 @@ export default function RegularModal({
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <Dialog.Panel
-                className={`relative transform overflow-hidden rounded-md bg-white text-left shadow-xl transition-all w-full ${sizeClasses[size]}`}
+                className={`relative transform overflow-visible rounded-md bg-white text-left shadow-xl transition-all w-full ${sizeClasses[size]}`}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
@@ -84,7 +84,7 @@ export default function RegularModal({
                 </div>
 
                 {/* Content */}
-                <div className="px-6 py-4">{children}</div>
+                <div className="px-6 py-4 overflow-visible">{children}</div>
               </Dialog.Panel>
             </Transition.Child>
           </div>

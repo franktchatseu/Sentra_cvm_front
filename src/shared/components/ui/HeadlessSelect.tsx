@@ -79,7 +79,7 @@ export default function HeadlessSelect({
             leaveTo="opacity-0"
           >
             <Listbox.Options
-              className="absolute z-[99999] mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm"
+              className="absolute z-[100000] mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm"
               style={{ minWidth: "100%" }}
             >
               {searchable && (

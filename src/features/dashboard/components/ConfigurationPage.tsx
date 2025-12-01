@@ -226,6 +226,16 @@ export default function ConfigurationPage() {
         status: "active",
         navigationPath: "/dashboard/control-groups",
       },
+      // Job-related configs
+      {
+        id: "job-types",
+        name: "Job Types",
+        description: "Configure and manage job types for scheduled jobs",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/job-types",
+      },
     ];
 
     setConfigurations(allConfigurations);

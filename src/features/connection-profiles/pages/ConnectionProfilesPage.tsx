@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Activity,
-  AlertTriangle,
   BarChart3,
   CheckCircle,
   CheckSquare,
@@ -11,18 +10,19 @@ import {
   Edit,
   Eye,
   Filter,
-  Globe,
   Loader2,
+  Play,
   Plus,
+  PowerOff,
   RefreshCw,
   Search,
   Server,
   Shield,
   Square,
-  Star,
   X,
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
+import { useConfirm } from "../../../contexts/ConfirmContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
@@ -63,6 +63,7 @@ const DEFAULT_FILTERS = {
 export default function ConnectionProfilesPage() {
   const navigate = useNavigate();
   const { error: showError, success: showSuccess } = useToast();
+  const { confirm } = useConfirm();
 
   const [profiles, setProfiles] = useState<ConnectionProfileType[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<
@@ -261,9 +262,56 @@ export default function ConnectionProfilesPage() {
     reloadProfiles();
   }, [reloadProfiles]);
 
+  const loadStats = useCallback(async () => {
+    try {
+      setLoadingStats(true);
+      const [
+        connectionTypes,
+        environments,
+        governance,
+        activeProfiles,
+        piiProfiles,
+        healthProfiles,
+      ] = await Promise.all([
+        connectionProfileService.getConnectionTypeStats(),
+        connectionProfileService.getEnvironmentStats(),
+        connectionProfileService.getDataGovernanceStats(),
+        connectionProfileService.getActiveProfiles(true),
+        connectionProfileService.getProfilesWithPii(true),
+        connectionProfileService.getHealthCheckEnabledProfiles(true),
+      ]);
+
+      setConnectionTypeStats(connectionTypes || []);
+      setEnvironmentStats(environments || []);
+      setStatsSummary((prev) => ({
+        ...prev,
+        total:
+          governance?.total ??
+          prev.total ??
+          (governance?.classificationCounts
+            ? Object.values(governance.classificationCounts).reduce(
+                (sum, count) => sum + (Number(count) || 0),
+                0
+              )
+            : prev.total),
+        active: activeProfiles?.length ?? prev.active,
+        withPii: piiProfiles?.length ?? prev.withPii,
+        healthEnabled: healthProfiles?.length ?? prev.healthEnabled,
+      }));
+    } catch (err) {
+      console.error("Failed to load connection profile stats", err);
+      showError(
+        "Failed to load stats",
+        err instanceof Error ? err.message : "Please try again later."
+      );
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [showError]);
+
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [loadStats]);
 
   useEffect(() => {
     if (!profiles.length) {
@@ -337,53 +385,6 @@ export default function ConnectionProfilesPage() {
     setFilteredProfiles(profiles.filter(matchesFilters));
   }, [profiles, debouncedSearchTerm, filters]);
 
-  const loadStats = async () => {
-    try {
-      setLoadingStats(true);
-      const [
-        connectionTypes,
-        environments,
-        governance,
-        activeProfiles,
-        piiProfiles,
-        healthProfiles,
-      ] = await Promise.all([
-        connectionProfileService.getConnectionTypeStats(),
-        connectionProfileService.getEnvironmentStats(),
-        connectionProfileService.getDataGovernanceStats(),
-        connectionProfileService.getActiveProfiles(true),
-        connectionProfileService.getProfilesWithPii(true),
-        connectionProfileService.getHealthCheckEnabledProfiles(true),
-      ]);
-
-      setConnectionTypeStats(connectionTypes || []);
-      setEnvironmentStats(environments || []);
-      setStatsSummary((prev) => ({
-        ...prev,
-        total:
-          governance?.total ??
-          prev.total ??
-          (governance?.classificationCounts
-            ? Object.values(governance.classificationCounts).reduce(
-                (sum, count) => sum + (Number(count) || 0),
-                0
-              )
-            : prev.total),
-        active: activeProfiles?.length ?? prev.active,
-        withPii: piiProfiles?.length ?? prev.withPii,
-        healthEnabled: healthProfiles?.length ?? prev.healthEnabled,
-      }));
-    } catch (err) {
-      console.error("Failed to load connection profile stats", err);
-      showError(
-        "Failed to load connection profile stats",
-        err instanceof Error ? err.message : "Please try again later."
-      );
-    } finally {
-      setLoadingStats(false);
-    }
-  };
-
   const handleCreate = () => {
     navigate("/dashboard/connection-profiles/new");
   };
@@ -394,6 +395,45 @@ export default function ConnectionProfilesPage() {
 
   const handleEdit = (id: number) => {
     navigate(`/dashboard/connection-profiles/${id}/edit`);
+  };
+
+  const handleToggleActive = async (
+    profile: ConnectionProfileType,
+    event?: React.MouseEvent
+  ) => {
+    event?.stopPropagation();
+    const action = profile.is_active ? "deactivate" : "activate";
+    const confirmed = await confirm({
+      title: `${action === "activate" ? "Activate" : "Deactivate"} Profile`,
+      message: `Are you sure you want to ${action} "${profile.profile_name}"?`,
+      type: action === "activate" ? "success" : "warning",
+      confirmText: action === "activate" ? "Activate" : "Deactivate",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
+
+    try {
+      if (action === "activate") {
+        await connectionProfileService.activateProfile(profile.id);
+        showSuccess(
+          "Profile activated",
+          `${profile.profile_name} is now active.`
+        );
+      } else {
+        await connectionProfileService.deactivateProfile(profile.id);
+        showSuccess(
+          "Profile deactivated",
+          `${profile.profile_name} is now inactive.`
+        );
+      }
+      await reloadProfiles();
+      await loadStats();
+    } catch (err) {
+      showError(
+        `Failed to ${action} profile`,
+        err instanceof Error ? err.message : "Please try again."
+      );
+    }
   };
 
   const selectedCount = selectedProfileIds.size;
@@ -408,19 +448,6 @@ export default function ConnectionProfilesPage() {
       }
       return next;
     });
-  };
-
-  const selectAllVisible = () => {
-    if (!filteredProfiles.length) {
-      return;
-    }
-    if (selectedProfileIds.size === filteredProfiles.length) {
-      setSelectedProfileIds(new Set());
-    } else {
-      setSelectedProfileIds(
-        new Set(filteredProfiles.map((profile) => profile.id))
-      );
-    }
   };
 
   const handleBulkActivateSelected = async () => {
@@ -493,20 +520,6 @@ export default function ConnectionProfilesPage() {
     );
     return validCombined.length ? validCombined : ENVIRONMENT_FALLBACKS;
   }, [environmentStats, profiles]);
-
-  const getConnectionTypeIcon = (type: string) => {
-    switch (type) {
-      case "database":
-        return Database;
-      case "api":
-        return Activity;
-      case "sftp":
-      case "ftp":
-        return Server;
-      default:
-        return Server;
-    }
-  };
 
   const getStatusBadge = (profile: ConnectionProfileType) => {
     const now = new Date();
@@ -595,7 +608,7 @@ export default function ConnectionProfilesPage() {
               controls for every integration endpoint
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <button
               onClick={() => {
                 if (!isSelectionMode) {
@@ -610,7 +623,7 @@ export default function ConnectionProfilesPage() {
                   setSelectedProfileIds(new Set());
                 }
               }}
-              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors whitespace-nowrap"
               style={{
                 backgroundColor: isSelectionMode
                   ? color.primary.action
@@ -630,7 +643,7 @@ export default function ConnectionProfilesPage() {
               onClick={() =>
                 navigate("/dashboard/connection-profiles/analytics")
               }
-              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors whitespace-nowrap"
               style={{
                 backgroundColor: "transparent",
                 color: color.primary.action,
@@ -642,7 +655,7 @@ export default function ConnectionProfilesPage() {
             </button>
             <button
               onClick={handleCreate}
-              className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white"
+              className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center gap-2 text-sm text-white whitespace-nowrap"
               style={{ backgroundColor: color.primary.action }}
             >
               <Plus className="w-4 h-4" />
@@ -684,7 +697,7 @@ export default function ConnectionProfilesPage() {
                 type="button"
                 onClick={handleBulkActivateSelected}
                 disabled={!selectedCount || bulkActionLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-white disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
                 style={{ backgroundColor: color.primary.action }}
               >
                 {bulkActionLoading && bulkActionType === "activate" && (
@@ -696,7 +709,7 @@ export default function ConnectionProfilesPage() {
                 type="button"
                 onClick={handleAutoDeactivateExpired}
                 disabled={bulkActionLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {bulkActionLoading && bulkActionType === "auto" ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -742,7 +755,7 @@ export default function ConnectionProfilesPage() {
               <button
                 type="button"
                 onClick={openFiltersPanel}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md whitespace-nowrap"
               >
                 <Filter className="w-4 h-4" />
                 Filters
@@ -767,7 +780,7 @@ export default function ConnectionProfilesPage() {
         ) : filteredProfiles.length === 0 ? (
           renderEmptyState()
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table
               className="w-full min-w-[1000px] text-sm"
               style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
@@ -907,6 +920,19 @@ export default function ConnectionProfilesPage() {
                           >
                             <Edit className="w-4 h-4 text-black" />
                           </button>
+                          <button
+                            onClick={(e) => handleToggleActive(profile, e)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                            title={
+                              profile.is_active ? "Deactivate" : "Activate"
+                            }
+                          >
+                            {profile.is_active ? (
+                              <PowerOff className="w-4 h-4 text-red-600" />
+                            ) : (
+                              <Play className="w-4 h-4 text-black" />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -979,7 +1005,7 @@ export default function ConnectionProfilesPage() {
                     onChange={(value) =>
                       setFilters((prev) => ({
                         ...prev,
-                        connectionType: value || "all",
+                        connectionType: String(value || "all"),
                       }))
                     }
                   />
@@ -1000,7 +1026,7 @@ export default function ConnectionProfilesPage() {
                     onChange={(value) =>
                       setFilters((prev) => ({
                         ...prev,
-                        environment: value || "all",
+                        environment: String(value || "all"),
                       }))
                     }
                   />
@@ -1021,7 +1047,7 @@ export default function ConnectionProfilesPage() {
                     onChange={(value) =>
                       setFilters((prev) => ({
                         ...prev,
-                        classification: value || "all",
+                        classification: String(value || "all"),
                       }))
                     }
                   />

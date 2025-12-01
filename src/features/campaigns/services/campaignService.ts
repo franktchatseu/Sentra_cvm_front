@@ -1005,7 +1005,7 @@ class CampaignService {
     }
   ): Promise<Record<string, unknown>> {
     const queryParams = new URLSearchParams();
-    queryParams.append("q", searchTerm);
+    queryParams.append("searchTerm", searchTerm);
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.offset) queryParams.append("offset", String(params.offset));
     if (params?.skipCache) queryParams.append("skipCache", "true");

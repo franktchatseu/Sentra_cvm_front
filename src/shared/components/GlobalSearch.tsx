@@ -724,7 +724,10 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
   const showQuickSearches = !searchTerm.trim() || searchTerm.trim().length < 2;
 
   return (
-    <div ref={containerRef} className="relative flex-1 max-w-xs sm:max-w-md">
+    <div
+      ref={containerRef}
+      className="relative flex-1 max-w-xs sm:max-w-md z-[9999]"
+    >
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
         <input
@@ -756,7 +759,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
       {showSuggestions && (
         <div
           ref={suggestionsRef}
-          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 max-h-[600px] overflow-y-auto z-50 w-full max-w-[calc(100vw-2rem)] sm:max-w-[500px] mx-auto sm:mx-0"
+          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 max-h-[600px] overflow-y-auto z-[9999] w-full max-w-[calc(100vw-2rem)] sm:max-w-[500px] mx-auto sm:mx-0"
         >
           {isLoading ? (
             <div className="p-12 text-center">

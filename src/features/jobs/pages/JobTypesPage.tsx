@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   AlertTriangle,
-  ArrowLeft,
   Briefcase,
   Edit,
   Eye,
@@ -655,22 +654,13 @@ export default function JobTypesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate("/dashboard/jobs")}
-            className="rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
-              {t.jobs.jobTypes}
-            </h1>
-            <p className={`${tw.textSecondary} mt-2 text-sm`}>
-              Manage the classification codes used when creating scheduled jobs.
-            </p>
-          </div>
+        <div>
+          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+            {t.jobs.jobTypes}
+          </h1>
+          <p className={`${tw.textSecondary} mt-2 text-sm`}>
+            Manage the classification codes used when creating scheduled jobs.
+          </p>
         </div>
         <div className="flex justify-end">
           <button

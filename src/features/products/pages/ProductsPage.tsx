@@ -152,11 +152,16 @@ export default function ProductsPage() {
       // Get product stats
       const statsResponse = await productService.getStats(true);
       if (statsResponse.success && statsResponse.data) {
+        // Backend returns avg_price as a string, need to parse it
+        const avgPrice = statsResponse.data.avg_price
+          ? parseFloat(String(statsResponse.data.avg_price))
+          : statsResponse.data.average_price || 0;
+
         setStats({
-          totalProducts: statsResponse.data.total_products || 0,
-          activeProducts: statsResponse.data.active_products || 0,
-          inactiveProducts: statsResponse.data.inactive_products || 0,
-          averagePrice: statsResponse.data.average_price || 0,
+          totalProducts: Number(statsResponse.data.total_products) || 0,
+          activeProducts: Number(statsResponse.data.active_products) || 0,
+          inactiveProducts: Number(statsResponse.data.inactive_products) || 0,
+          averagePrice: avgPrice,
         });
       }
 
@@ -233,9 +238,14 @@ export default function ProductsPage() {
       setProductToDelete(null);
       loadProducts();
       loadStats(); // Refresh stats cards
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete product:", err);
-      showError("Error", "Failed to delete product. Please try again.");
+      // Extract error message from backend response
+      const errorMessage =
+        err?.message ||
+        err?.error ||
+        "Failed to delete product. Please try again.";
+      showError("Error", errorMessage);
     } finally {
       setIsDeleting(false);
     }

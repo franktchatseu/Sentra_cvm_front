@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Edit,
-  Trash2,
   Database,
   Server,
   Activity,
@@ -25,7 +24,6 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import DateFormatter from "../../../shared/components/DateFormatter";
 import { useToast } from "../../../contexts/ToastContext";
 import { color, tw } from "../../../shared/utils/utils";
-import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import RegularModal from "../../../shared/components/ui/RegularModal";
 
 export default function ConnectionProfileDetailsPage() {
@@ -35,8 +33,6 @@ export default function ConnectionProfileDetailsPage() {
 
   const [profile, setProfile] = useState<ConnectionProfileType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [markUsedLoading, setMarkUsedLoading] = useState(false);
   const [healthModalOpen, setHealthModalOpen] = useState(false);
@@ -121,26 +117,6 @@ export default function ConnectionProfileDetailsPage() {
   const handleEdit = () => {
     if (id) {
       navigate(`/dashboard/connection-profiles/${id}/edit`);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!id || !profile) return;
-
-    setIsDeleting(true);
-    try {
-      // Note: Delete endpoint not in API docs, but following pattern
-      // You may need to add this to the service
-      success("Connection profile deleted successfully");
-      navigate("/dashboard/connection-profiles");
-    } catch (err) {
-      showError(
-        "Failed to delete connection profile",
-        err instanceof Error ? err.message : "Please try again later."
-      );
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteModal(false);
     }
   };
 
@@ -264,7 +240,7 @@ export default function ConnectionProfileDetailsPage() {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <LoadingSpinner variant="modern" size="xl" color="primary" />
-        <p className={`${tw.textMuted} font-medium mt-4`}>
+        <p className={`${tw.textMuted} font-medium mt-4 text-sm`}>
           Loading connection profile...
         </p>
       </div>
@@ -316,11 +292,13 @@ export default function ConnectionProfileDetailsPage() {
             <button
               onClick={handleToggleActive}
               disabled={togglingStatus}
-              className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                profile.is_active
-                  ? "border-red-200 text-red-600 hover:bg-red-50"
-                  : "border-green-200 text-green-600 hover:bg-green-50"
-              } ${togglingStatus ? "opacity-60" : ""}`}
+              className={`${tw.borderedButton} inline-flex items-center gap-2 ${
+                togglingStatus ? "opacity-60" : ""
+              }`}
+              style={{
+                borderColor: color.primary.action,
+                color: color.primary.action,
+              }}
               title={
                 profile.is_active ? "Deactivate profile" : "Activate profile"
               }
@@ -391,16 +369,6 @@ export default function ConnectionProfileDetailsPage() {
                   >
                     <Calendar size={16} />
                     Adjust Validity
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(true);
-                      setShowMoreMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  >
-                    <Trash2 size={16} />
-                    Delete
                   </button>
                 </div>
               )}
@@ -677,6 +645,7 @@ export default function ConnectionProfileDetailsPage() {
             onChange={(value) =>
               setHealthStatus((value || "healthy") as "healthy" | "unhealthy")
             }
+            className="relative z-[100000]"
           />
           <div className="flex items-center justify-end gap-2">
             <button
@@ -759,18 +728,6 @@ export default function ConnectionProfileDetailsPage() {
           </div>
         </div>
       </RegularModal>
-
-      <DeleteConfirmModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDelete}
-        title="Delete Connection Profile"
-        description="Are you sure you want to delete this connection profile? This action cannot be undone."
-        itemName={profile.profile_name}
-        isLoading={isDeleting}
-        confirmText="Delete Profile"
-        cancelText="Cancel"
-      />
     </div>
   );
 }

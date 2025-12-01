@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { Gift } from "lucide-react";
 import {
   CreateCampaignRequest,
@@ -48,9 +47,8 @@ export default function OfferMappingStep({
   validationErrors = {},
   clearValidationErrors,
 }: OfferMappingStepProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [showOfferModal, setShowOfferModal] = useState(false);
-  const [hasAutoOpenedModal, setHasAutoOpenedModal] = useState(false);
+  const hasAutoOpenedRef = useRef(false);
   const [offerMappings, setOfferMappings] = useState<{
     [segmentId: string]: CampaignOffer[];
   }>({});
@@ -65,8 +63,16 @@ export default function OfferMappingStep({
 
   // Auto-open modal when returning from offer creation (only once)
   useEffect(() => {
+    // Check if we've already tried to auto-open (using sessionStorage to persist across remounts)
+    const autoOpenedKey = "offerModalAutoOpened";
+    const hasAutoOpened = sessionStorage.getItem(autoOpenedKey) === "true";
+
     // Check if we have newly created offers and haven't auto-opened the modal yet
-    if (!hasAutoOpenedModal && selectedSegments.length > 0) {
+    if (
+      !hasAutoOpened &&
+      !hasAutoOpenedRef.current &&
+      selectedSegments.length > 0
+    ) {
       const campaignFlowOffersStr = sessionStorage.getItem(
         "campaignFlowCreatedOffers"
       );
@@ -83,6 +89,10 @@ export default function OfferMappingStep({
 
       // Only auto-open if there are newly created offers that aren't already selected
       if (hasNewOffer) {
+        // Mark as attempted immediately to prevent loops
+        hasAutoOpenedRef.current = true;
+        sessionStorage.setItem(autoOpenedKey, "true");
+
         // Determine which segment to map to
         let segmentToMap: string | null = null;
 
@@ -115,15 +125,13 @@ export default function OfferMappingStep({
           const timer = setTimeout(() => {
             setEditingSegmentId(segmentToMap);
             setShowOfferModal(true);
-            setHasAutoOpenedModal(true);
-          }, 100);
+          }, 300);
 
           return () => clearTimeout(timer);
         }
       }
     }
   }, [
-    hasAutoOpenedModal,
     selectedSegments,
     selectedOffers,
     formData.campaign_type,
@@ -334,8 +342,6 @@ export default function OfferMappingStep({
           onClose={() => {
             setShowOfferModal(false);
             setEditingSegmentId(null);
-            // Reset auto-open flag when modal is manually closed so it can be opened again if needed
-            // But don't reset hasAutoOpenedModal as we only want to auto-open once per return
           }}
           onSelect={handleOfferSelect}
           selectedOffers={
