@@ -992,11 +992,34 @@ export default function OfferDetailsPage() {
 
       // Use the new endpoint to set primary product
       // This will automatically handle setting the old primary to null
-      await offerService.setPrimaryProduct(Number(id), productId);
+      const response = await offerService.setPrimaryProduct(
+        Number(id),
+        productId
+      );
+
+      // Update primaryProductId state immediately from response
+      if (response.data?.primary_product_id) {
+        setPrimaryProductId(response.data.primary_product_id);
+      } else if (productId === null) {
+        setPrimaryProductId(null);
+      } else {
+        setPrimaryProductId(productId);
+      }
+
+      // Update offer state with the new primary_product_id
+      if (response.data) {
+        setOffer((prev) => ({
+          ...prev,
+          ...response.data,
+        }));
+      }
 
       // Reload products with cache bypassed to get fresh data
-      // This will update primaryProductId from the API response
+      // This will update the is_primary flags on all products
       await loadProducts(true);
+
+      // Also reload offer data to ensure everything is in sync
+      await loadOffer(true);
 
       success(
         "Primary Product Set",
@@ -1004,7 +1027,9 @@ export default function OfferDetailsPage() {
       );
     } catch (err) {
       // Failed to set primary product
-      showError("Failed to set primary product");
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to set primary product";
+      showError("Failed to set primary product", errorMessage);
     } finally {
       setSettingPrimaryId(null);
     }

@@ -1278,6 +1278,72 @@ export default function CreateOfferPage() {
 
   const { user } = useAuth();
 
+  // Helper to replace variables in text
+  const replaceVariables = (
+    text: string,
+    variables: Record<string, string | number | boolean> = {}
+  ): string => {
+    if (!text) return "";
+    let result = text;
+    Object.keys(variables).forEach((key) => {
+      const value = String(variables[key]);
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+      result = result.replace(regex, value);
+    });
+    return result;
+  };
+
+  // Helper to parse variables safely - tries to extract partial values even from invalid JSON
+  const parseVariables = (
+    vars: string | Record<string, string | number | boolean> | undefined
+  ): Record<string, string | number | boolean> => {
+    try {
+      if (typeof vars === "string") {
+        const trimmed = vars.trim();
+        if (!trimmed) return {};
+        return JSON.parse(trimmed);
+      } else if (vars) {
+        return vars;
+      }
+    } catch {
+      // If parsing fails, try to extract partial values from string
+      if (typeof vars === "string" && vars.trim()) {
+        const cleaned = vars.trim();
+        const pairs: Record<string, string | number | boolean> = {};
+
+        // Try to extract key-value pairs using regex
+        // Matches: "key": "value" or "key": value
+        const patterns = [
+          /"([^"]+)":\s*"([^"]*)"/g, // String values
+          /"([^"]+)":\s*(\d+\.?\d*)/g, // Number values
+          /"([^"]+)":\s*(true|false)/g, // Boolean values
+        ];
+
+        patterns.forEach((pattern) => {
+          let match;
+          while ((match = pattern.exec(cleaned)) !== null) {
+            const key = match[1];
+            let value: string | number | boolean = match[2];
+
+            // Convert to appropriate type
+            if (value === "true") value = true;
+            else if (value === "false") value = false;
+            else if (!isNaN(Number(value)) && value !== "") {
+              value = Number(value);
+            }
+
+            pairs[key] = value;
+          }
+        });
+
+        if (Object.keys(pairs).length > 0) {
+          return pairs;
+        }
+      }
+    }
+    return {};
+  };
+
   // Preselect category from URL parameter
   useEffect(() => {
     const categoryIdParam = searchParams.get("categoryId");
@@ -1754,34 +1820,64 @@ export default function CreateOfferPage() {
             throw new Error("User ID not available for saving creatives");
           }
 
+          console.log("Saving creatives:", creatives.length, "creatives");
+
           // Create creatives for each channel/locale combination
           const creativePromises = creatives.map(async (creative) => {
-            // Generate a name for the creative (use title if available, otherwise channel + locale)
-            const creativeName = creative.title
-              ? creative.title.trim()
-              : `${creative.channel} - ${creative.locale}`;
+            try {
+              // Parse variables to get actual values (templates are frontend-only)
+              const variables = parseVariables(creative.variables);
 
-            const creativePayload = {
-              offer_id: offerId,
-              channel: creative.channel,
-              locale: creative.locale,
-              name: creativeName,
-              title: creative.title || undefined,
-              text_body: creative.text_body || undefined,
-              html_body: creative.html_body || undefined,
-              variables: creative.variables || undefined,
-              created_by: user.user_id,
-            };
+              // Replace placeholders with actual values in title, text_body, and html_body
+              // Templates are frontend-only, so we send only the resolved content
+              // replaceVariables handles empty variables gracefully (just returns original text)
+              const resolvedTitle = creative.title
+                ? replaceVariables(creative.title, variables)
+                : undefined;
+              const resolvedTextBody = creative.text_body
+                ? replaceVariables(creative.text_body, variables)
+                : undefined;
+              const resolvedHtmlBody = creative.html_body
+                ? replaceVariables(creative.html_body, variables)
+                : undefined;
 
-            return await offerCreativeService.create(creativePayload);
+              // Generate a name for the creative (use resolved title if available, otherwise channel + locale)
+              const creativeName =
+                resolvedTitle && resolvedTitle.trim()
+                  ? resolvedTitle.trim()
+                  : `${creative.channel} - ${creative.locale}`;
+
+              const creativePayload = {
+                offer_id: offerId,
+                channel: creative.channel,
+                locale: creative.locale,
+                name: creativeName,
+                title: resolvedTitle || undefined,
+                text_body: resolvedTextBody || undefined,
+                html_body: resolvedHtmlBody || undefined,
+                // Don't send template_type_id or variables - templates are frontend-only
+                created_by: user.user_id,
+              };
+
+              console.log("Creating creative with payload:", creativePayload);
+              return await offerCreativeService.create(creativePayload);
+            } catch (err) {
+              console.error("Failed to create creative:", err, creative);
+              throw err;
+            }
           });
 
           await Promise.all(creativePromises);
-        } catch {
+          console.log("All creatives saved successfully");
+        } catch (err) {
+          console.error("Failed to save creatives:", err);
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error occurred";
           showError(
             `Offer ${
               isEditMode ? "updated" : "created"
-            }, but failed to save creatives`
+            }, but failed to save creatives`,
+            errorMessage
           );
           navigate("/dashboard/offers");
           return;

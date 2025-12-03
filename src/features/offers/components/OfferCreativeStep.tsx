@@ -26,7 +26,6 @@ import { offerCreativeService } from "../services/offerCreativeService";
 import { useConfigurationData } from "../../../shared/services/configurationDataService";
 import { TypeConfigurationItem } from "../../../shared/components/TypeConfigurationPage";
 import {
-  SMSButtonPhonePreview,
   SMSSmartphonePreview,
   EmailLaptopPreview,
 } from "./CreativePreviewComponents";
@@ -573,6 +572,9 @@ export default function OfferCreativeStep({
       [selectedCreativeData.id]: templateId,
     }));
 
+    // Get template variables (default values)
+    const templateVariables = template.variables || {};
+
     // Populate creative fields with template content (from config)
     const updates: Partial<LocalOfferCreative> = {
       // Set channel if template has a specific channel
@@ -582,14 +584,21 @@ export default function OfferCreativeStep({
     };
 
     // Populate title, text_body, html_body if template has them
+    // Replace placeholders with actual values immediately
     if (template.title) {
-      updates.title = template.title;
+      updates.title = replaceVariables(template.title, templateVariables);
     }
     if (template.text_body) {
-      updates.text_body = template.text_body;
+      updates.text_body = replaceVariables(
+        template.text_body,
+        templateVariables
+      );
     }
     if (template.html_body) {
-      updates.html_body = template.html_body;
+      updates.html_body = replaceVariables(
+        template.html_body,
+        templateVariables
+      );
     }
     if (template.variables) {
       updates.variables = template.variables;
@@ -1239,33 +1248,18 @@ export default function OfferCreativeStep({
               {/* Device-Specific Previews */}
               {selectedCreativeData?.channel === "SMS" ||
               selectedCreativeData?.channel === "SMS Flash" ? (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-4">
-                      Smartphone Preview
-                    </h3>
-                    <SMSSmartphonePreview
-                      message={
-                        previewResult.rendered_text_body ||
-                        previewResult.rendered_title ||
-                        ""
-                      }
-                      title={previewResult.rendered_title}
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-4">
-                      Feature Phone Preview
-                    </h3>
-                    <SMSButtonPhonePreview
-                      message={
-                        previewResult.rendered_text_body ||
-                        previewResult.rendered_title ||
-                        ""
-                      }
-                      title={previewResult.rendered_title}
-                    />
-                  </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                    SMS Preview
+                  </h3>
+                  <SMSSmartphonePreview
+                    message={
+                      previewResult.rendered_text_body ||
+                      previewResult.rendered_title ||
+                      ""
+                    }
+                    title={previewResult.rendered_title}
+                  />
                 </div>
               ) : selectedCreativeData?.channel === "Email" ? (
                 <div>

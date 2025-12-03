@@ -737,6 +737,7 @@ export default function OffersPage() {
       await offerService.archiveOffer(id);
       success("Offer Archived", "Offer has been archived successfully.");
       await loadOffers(true); // Skip cache for immediate update
+      fetchOfferStats(); // Refresh stats cards
       setShowActionMenu(null);
     } catch {
       showError("Error", "Failed to archive offer");
@@ -772,6 +773,7 @@ export default function OffersPage() {
 
       success("Offer Expired", "Offer has been expired successfully.");
       setShowActionMenu(null);
+      fetchOfferStats(); // Refresh stats cards
     } catch {
       showError("Error", "Failed to expire offer");
       // Expire offer error
@@ -789,6 +791,7 @@ export default function OffersPage() {
         "Approval request has been sent successfully."
       );
       await loadOffers(true); // Skip cache for immediate update
+      fetchOfferStats(); // Refresh stats cards
       setShowActionMenu(null);
     } catch {
       showError("Error", "Failed to request approval");
@@ -808,6 +811,7 @@ export default function OffersPage() {
       await offerService.approveOffer(id, { approved_by: user.user_id });
       success("Offer Approved", "Offer has been approved successfully.");
       await loadOffers(true); // Skip cache for immediate update
+      fetchOfferStats(); // Refresh stats cards
       setShowActionMenu(null);
     } catch {
       showError("Error", "Failed to approve offer");

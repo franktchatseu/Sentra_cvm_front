@@ -271,27 +271,29 @@ export default function CategoryDetailsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
           <button
             onClick={() => navigate("/dashboard/offer-catalogs")}
-            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
               {category.name}
             </h1>
             {category.description && (
-              <p className="text-gray-600 mt-1">{category.description}</p>
+              <p className="text-sm sm:text-base text-gray-600 mt-1 line-clamp-2">
+                {category.description}
+              </p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={handleEditCategory}
-            className="px-4 py-2 rounded-md transition-colors font-medium"
+            className="px-3 sm:px-4 py-2 rounded-md transition-colors font-medium text-sm sm:text-base whitespace-nowrap"
             style={{
               backgroundColor: color.primary.action,
               color: color.text.inverse,
@@ -301,7 +303,7 @@ export default function CategoryDetailsPage() {
           </button>
           <button
             onClick={handleToggleStatus}
-            className={`px-4 py-2 rounded-md transition-colors font-medium ${
+            className={`px-3 sm:px-4 py-2 rounded-md transition-colors font-medium text-sm sm:text-base whitespace-nowrap ${
               category.is_active
                 ? "text-white border"
                 : "text-green-700 bg-green-100 border border-green-300 hover:bg-green-200"

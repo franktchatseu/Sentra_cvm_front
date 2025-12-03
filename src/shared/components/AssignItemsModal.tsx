@@ -1001,18 +1001,18 @@ function AssignItemsModal({
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="relative bg-white rounded-md shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
                 {typeInfo.title} to {catalogName || "Catalog"}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">
                 Select {typeInfo.plural} to assign to this catalog
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0"
               title="Close"
             >
               <X className="w-5 h-5 text-gray-500" />
@@ -1020,7 +1020,7 @@ function AssignItemsModal({
           </div>
 
           {/* Search and Filters */}
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row items-center gap-4 flex-wrap">
               {/* Search Bar */}
               <div className="relative flex-1 w-full sm:w-auto min-w-[200px]">
@@ -1183,7 +1183,7 @@ function AssignItemsModal({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <LoadingSpinner />
@@ -1198,14 +1198,14 @@ function AssignItemsModal({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[640px]">
                   <thead
                     className="border-b border-gray-200"
                     style={{ background: color.surface.tableHeader }}
                   >
                     <tr>
                       <th
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         <button
@@ -1224,30 +1224,30 @@ function AssignItemsModal({
                               <Check className="w-3.5 h-3.5 text-white" />
                             )}
                           </div>
-                          <span>Select All</span>
+                          <span className="hidden sm:inline">Select All</span>
                         </button>
                       </th>
                       <th
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Name
                       </th>
                       <th
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden md:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Description
                       </th>
                       <th
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Status
                       </th>
                       {itemType !== "products" && itemType !== "campaigns" && (
                         <th
-                          className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                          className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                           style={{ color: color.surface.tableHeaderText }}
                         >
                           Type
@@ -1255,20 +1255,20 @@ function AssignItemsModal({
                       )}
                       {itemType === "campaigns" && (
                         <th
-                          className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                          className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell"
                           style={{ color: color.surface.tableHeaderText }}
                         >
                           Campaign Type
                         </th>
                       )}
                       <th
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider hidden xl:table-cell"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Created At
                       </th>
                       <th
-                        className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                         style={{ color: color.surface.tableHeaderText }}
                       >
                         Actions
@@ -1288,7 +1288,7 @@ function AssignItemsModal({
                             isAssigned ? "opacity-60" : ""
                           }`}
                         >
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-4">
                             <button
                               onClick={() => handleToggleSelection(item.id)}
                               disabled={isAssigned}
@@ -1313,7 +1313,7 @@ function AssignItemsModal({
                             </button>
                           </td>
                           <td
-                            className={`px-6 py-4 ${
+                            className={`px-3 sm:px-6 py-4 ${
                               !isAssigned ? "cursor-pointer" : ""
                             }`}
                             onClick={() => {
@@ -1323,7 +1323,7 @@ function AssignItemsModal({
                             }}
                           >
                             <div>
-                              <div className="font-semibold text-gray-900">
+                              <div className="font-semibold text-gray-900 truncate max-w-[200px] sm:max-w-none">
                                 {item.name}
                               </div>
                               {isAssigned && (
@@ -1340,33 +1340,33 @@ function AssignItemsModal({
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-4 hidden md:table-cell">
                             <p className="text-sm text-gray-600 line-clamp-2 max-w-md">
                               {item.description || "No description"}
                             </p>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-4">
                             {getStatusBadge(getStatusDisplay(item))}
                           </td>
                           {itemType !== "products" &&
                             itemType !== "campaigns" && (
-                              <td className="px-6 py-4">
+                              <td className="px-3 sm:px-6 py-4 hidden lg:table-cell">
                                 <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">
                                   {getTypeDisplay(item)}
                                 </span>
                               </td>
                             )}
                           {itemType === "campaigns" && (
-                            <td className="px-6 py-4">
+                            <td className="px-3 sm:px-6 py-4 hidden lg:table-cell">
                               <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">
                                 {getTypeDisplay(item)}
                               </span>
                             </td>
                           )}
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-3 sm:px-6 py-4 text-sm text-gray-600 hidden xl:table-cell">
                             {getCreatedAtDisplay(item)}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-4">
                             {isAssigned && (
                               <button
                                 onClick={() => handleRemoveItem(item.id)}

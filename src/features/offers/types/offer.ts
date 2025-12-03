@@ -40,6 +40,7 @@ export interface Offer {
   min_spend?: number;
   max_usage_per_customer: number;
   valid_from?: string;
+  product_ids?: number[]; // Array of product IDs linked to the offer
   valid_to?: string;
   is_reusable: boolean;
   supports_multi_language: boolean;
