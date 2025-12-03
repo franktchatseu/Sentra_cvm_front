@@ -488,6 +488,16 @@ export const buttons = {
     borderRadius: "0.5rem",
     fontSize: "0.875rem", // text-sm (14px)
   },
+
+  delete: {
+    background: "#DC2626", // bg-red-600
+    color: "#FFFFFF",
+    border: "none",
+    paddingY: "0.5rem",
+    paddingX: "1rem",
+    borderRadius: "0.5rem",
+    fontSize: "0.875rem", // text-sm (14px)
+  },
 };
 
 // Cards defines consistent styling for all card components

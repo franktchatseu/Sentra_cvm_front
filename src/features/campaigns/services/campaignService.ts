@@ -764,7 +764,7 @@ class CampaignService {
 
   async updateCampaignCategory(
     id: number,
-    request: { name?: string; description?: string }
+    request: { name?: string; description?: string; is_active?: boolean }
   ): Promise<Record<string, unknown>> {
     const categoriesUrl = `${API_CONFIG.BASE_URL}/campaign-categories/${id}`;
 
@@ -787,16 +787,33 @@ class CampaignService {
     });
 
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error("API Error Response:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorBody,
-        url: categoriesUrl,
-      });
-      throw new Error(
-        `Failed to update category: ${response.status} - ${errorBody}`
-      );
+      try {
+        const errorData = await response.json();
+        // Extract error message from response
+        if (errorData.error) {
+          throw new Error(errorData.error);
+        }
+        if (errorData.message) {
+          throw new Error(errorData.message);
+        }
+        if (errorData.details) {
+          throw new Error(errorData.details);
+        }
+        // Fallback to status code if no error message
+        throw new Error(`Failed to update category: ${response.status}`);
+      } catch (err) {
+        // If JSON parsing fails, try text
+        if (err instanceof Error && err.message.includes("JSON")) {
+          const errorText = await response.text();
+          throw new Error(
+            errorText || `Failed to update category: ${response.status}`
+          );
+        }
+        if (err instanceof Error) {
+          throw err;
+        }
+        throw new Error(`Failed to update category: ${response.status}`);
+      }
     }
 
     // Check if response has content

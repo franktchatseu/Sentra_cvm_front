@@ -317,6 +317,8 @@ function JobTypeViewModal({
   jobType,
   isLoading,
 }: JobTypeViewModalProps) {
+  const { t } = useLanguage();
+
   if (!isOpen) return null;
 
   return (

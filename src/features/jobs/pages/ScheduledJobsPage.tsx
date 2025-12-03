@@ -613,17 +613,13 @@ export default function ScheduledJobsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <select
+        <HeadlessSelect
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-md border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm focus:border-[#3b8169] focus:outline-none focus:ring-1 focus:ring-[#3b8169] w-auto min-w-[180px]"
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value || "all"} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => setStatusFilter(value as string)}
+          options={STATUS_OPTIONS}
+          placeholder="All statuses"
+          className="w-auto min-w-[180px]"
+        />
         <button
           onClick={() => setShowAdvancedFilters(true)}
           className="inline-flex items-center justify-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"

@@ -16,6 +16,8 @@ import {
   X,
   Archive,
   Star,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw } from "../../../shared/utils/utils";
@@ -354,6 +356,9 @@ export default function SegmentCategoriesPage() {
   const [categoryToDelete, setCategoryToDelete] =
     useState<SegmentCategory | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingCategoryId, setTogglingCategoryId] = useState<number | null>(
+    null
+  );
 
   const [categories, setCategories] = useState<SegmentCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -534,6 +539,35 @@ export default function SegmentCategoriesPage() {
   const handleDeleteCategory = (category: SegmentCategory) => {
     setCategoryToDelete(category);
     setShowDeleteModal(true);
+  };
+
+  const handleToggleActive = async (category: SegmentCategory) => {
+    try {
+      setTogglingCategoryId(category.id);
+      const newActiveStatus = !category.is_active;
+
+      // Create a clean request object with only is_active field
+      const updateRequest: UpdateSegmentCategoryRequest = {
+        is_active: newActiveStatus,
+      };
+
+      await segmentService.updateSegmentCategory(category.id, updateRequest);
+      await loadCategories(true);
+      success(
+        newActiveStatus ? "Category Activated" : "Category Deactivated",
+        `"${category.name}" has been ${
+          newActiveStatus ? "activated" : "deactivated"
+        } successfully.`
+      );
+    } catch (err) {
+      console.error("Failed to toggle category status:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update category";
+      // Display backend error message directly
+      showError("Cannot Deactivate Category", errorMessage);
+    } finally {
+      setTogglingCategoryId(null);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -823,6 +857,20 @@ export default function SegmentCategoriesPage() {
                 </h3>
                 <div className="flex items-center space-x-1">
                   <button
+                    onClick={() => handleToggleActive(category)}
+                    disabled={togglingCategoryId === category.id}
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={category.is_active ? "Deactivate" : "Activate"}
+                  >
+                    {togglingCategoryId === category.id ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : category.is_active ? (
+                      <PowerOff className="w-4 h-4 text-orange-600" />
+                    ) : (
+                      <Power className="w-4 h-4 text-green-600" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => {
                       setSelectedCategory(category);
                       setIsCategoryModalOpen(true);
@@ -896,6 +944,20 @@ export default function SegmentCategoriesPage() {
                   title="View Segments"
                 >
                   View Segments
+                </button>
+                <button
+                  onClick={() => handleToggleActive(category)}
+                  disabled={togglingCategoryId === category.id}
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={category.is_active ? "Deactivate" : "Activate"}
+                >
+                  {togglingCategoryId === category.id ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : category.is_active ? (
+                    <PowerOff className="w-4 h-4 text-orange-600" />
+                  ) : (
+                    <Power className="w-4 h-4 text-green-600" />
+                  )}
                 </button>
                 <button
                   onClick={() => {

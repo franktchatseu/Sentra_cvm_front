@@ -421,22 +421,21 @@ export default function SegmentListModal({
               <label className="text-sm font-medium text-black mb-1 block">
                 File Delimiter
               </label>
-              <select
+              <HeadlessSelect
                 value={form.file_delimiter}
-                onChange={(e) =>
-                  handleInputChange("file_delimiter", e.target.value)
+                onChange={(value) =>
+                  handleInputChange("file_delimiter", value as string)
                 }
-                className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
-                  errors.file_delimiter
-                    ? "border-red-400 focus:ring-red-200"
-                    : "border-gray-300 focus:ring-[var(--primary-color,#5EC6B1)]"
-                }`}
-              >
-                <option value=",">Comma (,)</option>
-                <option value=";">Semicolon (;)</option>
-                <option value="\t">Tab</option>
-                <option value="|">Pipe (|)</option>
-              </select>
+                options={[
+                  { label: "Comma (,)", value: "," },
+                  { label: "Semicolon (;)", value: ";" },
+                  { label: "Tab", value: "\t" },
+                  { label: "Pipe (|)", value: "|" },
+                ]}
+                placeholder="Select delimiter"
+                error={!!errors.file_delimiter}
+                className="w-full"
+              />
               {errors.file_delimiter && (
                 <p className="mt-1 text-xs text-red-500">
                   {errors.file_delimiter}

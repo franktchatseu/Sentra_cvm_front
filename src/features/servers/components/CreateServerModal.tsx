@@ -10,6 +10,7 @@ import {
 import { serverService } from "../services/serverService";
 import { useToast } from "../../../contexts/ToastContext";
 import { tw } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 interface CreateServerModalProps {
   isOpen: boolean;
@@ -170,20 +171,22 @@ export default function CreateServerModal({
               <label className="text-sm font-medium text-gray-700">
                 Protocol<span className="text-red-500">*</span>
               </label>
-              <select
-                name="protocol"
+              <HeadlessSelect
                 value={form.protocol}
-                onChange={handleChange}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-              >
-                {["http", "https", "ftp", "sftp", "tcp", "smtp"].map(
-                  (protocol) => (
-                    <option key={protocol} value={protocol}>
-                      {protocol.toUpperCase()}
-                    </option>
-                  )
+                onChange={(value) =>
+                  handleChange({
+                    target: { name: "protocol", value: value as string },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+                options={["http", "https", "ftp", "sftp", "tcp", "smtp"].map(
+                  (protocol) => ({
+                    label: protocol.toUpperCase(),
+                    value: protocol,
+                  })
                 )}
-              </select>
+                placeholder="Select protocol"
+                className="mt-1 w-full"
+              />
             </div>
 
             <div>
@@ -206,18 +209,20 @@ export default function CreateServerModal({
               <label className="text-sm font-medium text-gray-700">
                 Environment
               </label>
-              <select
-                name="environment"
+              <HeadlessSelect
                 value={form.environment}
-                onChange={handleChange}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-              >
-                {["dev", "qa", "uat", "prod"].map((env) => (
-                  <option key={env} value={env}>
-                    {env.toUpperCase()}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) =>
+                  handleChange({
+                    target: { name: "environment", value: value as string },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+                options={["dev", "qa", "uat", "prod"].map((env) => ({
+                  label: env.toUpperCase(),
+                  value: env,
+                }))}
+                placeholder="Select environment"
+                className="mt-1 w-full"
+              />
             </div>
 
             <div>

@@ -183,6 +183,7 @@ class SegmentService {
     if (!response.ok) {
       try {
         const errorData = await response.json();
+        // Handle different error response formats
         if (errorData.error) {
           throw new Error(errorData.error);
         }
@@ -191,6 +192,10 @@ class SegmentService {
         }
         if (errorData.details) {
           throw new Error(errorData.details);
+        }
+        // If error is a string directly
+        if (typeof errorData === "string") {
+          throw new Error(errorData);
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       } catch (err) {

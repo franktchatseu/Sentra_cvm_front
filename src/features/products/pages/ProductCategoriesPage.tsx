@@ -15,6 +15,8 @@ import {
   CheckCircle,
   Archive,
   Star,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import {
@@ -36,6 +38,7 @@ import { useRemoveFromCatalog } from "../../../shared/hooks/useRemoveFromCatalog
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import CreateCategoryModal from "../../../shared/components/CreateCategoryModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 interface ProductsModalProps {
   isOpen: boolean;
@@ -329,6 +332,9 @@ export default function ProductCatalogsPage() {
   const [categoryToDelete, setCategoryToDelete] =
     useState<ProductCategory | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingCategoryId, setTogglingCategoryId] = useState<number | null>(
+    null
+  );
 
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -656,6 +662,63 @@ export default function ProductCatalogsPage() {
     setShowDeleteModal(true);
   };
 
+  const handleToggleActive = async (category: ProductCategory) => {
+    try {
+      setTogglingCategoryId(category.id);
+      const newActiveStatus = !category.is_active;
+
+      // If deactivating, check for active products first
+      if (!newActiveStatus) {
+        const activeProductsResponse =
+          await productCategoryService.getCategoryProducts(category.id, {
+            limit: 1,
+            active_only: true,
+            skipCache: true,
+          });
+        const activeProducts = activeProductsResponse.data || [];
+
+        if (activeProducts.length > 0) {
+          showError(
+            "Cannot Deactivate Category",
+            `This category cannot be deactivated because it has ${
+              activeProductsResponse.pagination?.total || activeProducts.length
+            } active product(s) using it. Please deactivate or reassign those products first.`
+          );
+          setTogglingCategoryId(null);
+          return;
+        }
+      }
+
+      if (newActiveStatus) {
+        await productCategoryService.activateCategory(category.id);
+      } else {
+        await productCategoryService.deactivateCategory(category.id);
+      }
+      await Promise.all([loadCategories(true), loadStats(true)]);
+      success(
+        newActiveStatus ? "Catalog Activated" : "Catalog Deactivated",
+        `"${category.name}" has been ${
+          newActiveStatus ? "activated" : "deactivated"
+        } successfully.`
+      );
+    } catch (err) {
+      console.error("Failed to toggle category status:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update category";
+      // Check if it's the backend validation error
+      if (
+        errorMessage.includes("Cannot modify category") ||
+        errorMessage.includes("active")
+      ) {
+        showError("Cannot Deactivate Category", errorMessage);
+      } else {
+        showError("Failed to update category", "Please try again later.");
+      }
+    } finally {
+      setTogglingCategoryId(null);
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
 
@@ -768,8 +831,14 @@ export default function ProductCatalogsPage() {
   const activeCatalogs =
     stats?.active_categories ??
     categories.filter((cat) => cat.is_active).length;
+  // Calculate inactive catalogs from actual categories list if backend value seems wrong
+  const inactiveFromBackend = stats?.inactive_categories ?? 0;
+  const inactiveFromList = categories.filter((cat) => !cat.is_active).length;
+  // Use client-side calculation if backend says 0 but we have inactive categories
   const inactiveCatalogs =
-    stats?.inactive_categories ?? Math.max(0, totalCatalogs - activeCatalogs);
+    inactiveFromBackend > 0 || inactiveFromList === 0
+      ? inactiveFromBackend
+      : inactiveFromList;
   const clientSideUnusedCount = categories.filter(
     (cat) => (categoryProductCounts[String(cat.id)]?.total_products || 0) === 0
   ).length;
@@ -1133,6 +1202,20 @@ export default function ProductCatalogsPage() {
                 </h3>
                 <div className="flex items-center space-x-1">
                   <button
+                    onClick={() => handleToggleActive(category)}
+                    disabled={togglingCategoryId === category.id}
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={category.is_active ? "Deactivate" : "Activate"}
+                  >
+                    {togglingCategoryId === category.id ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : category.is_active ? (
+                      <PowerOff className="w-4 h-4 text-orange-600" />
+                    ) : (
+                      <Power className="w-4 h-4 text-green-600" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => handleEditCatalog(category)}
                     className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
@@ -1268,6 +1351,20 @@ export default function ProductCatalogsPage() {
                   title="View & Assign Products"
                 >
                   View Products
+                </button>
+                <button
+                  onClick={() => handleToggleActive(category)}
+                  disabled={togglingCategoryId === category.id}
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={category.is_active ? "Deactivate" : "Activate"}
+                >
+                  {togglingCategoryId === category.id ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : category.is_active ? (
+                    <PowerOff className="w-4 h-4 text-orange-600" />
+                  ) : (
+                    <Power className="w-4 h-4 text-green-600" />
+                  )}
                 </button>
                 <button
                   onClick={() => handleEditCatalog(category)}
@@ -1528,28 +1625,28 @@ export default function ProductCatalogsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Status
                     </label>
-                    <select
+                    <HeadlessSelect
                       value={
                         advancedSearch.isActive === null
                           ? ""
                           : String(advancedSearch.isActive)
                       }
-                      onChange={(e) => {
-                        const value =
-                          e.target.value === ""
-                            ? null
-                            : e.target.value === "true";
+                      onChange={(value) => {
+                        const boolValue =
+                          value === "" ? null : value === "true";
                         setAdvancedSearch((prev) => ({
                           ...prev,
-                          isActive: value,
+                          isActive: boolValue,
                         }));
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Any Status</option>
-                      <option value="true">Active</option>
-                      <option value="false">Inactive</option>
-                    </select>
+                      options={[
+                        { label: "Any Status", value: "" },
+                        { label: "Active", value: "true" },
+                        { label: "Inactive", value: "false" },
+                      ]}
+                      placeholder="Any Status"
+                      className="w-full"
+                    />
                   </div>
 
                   {/* Date Range */}

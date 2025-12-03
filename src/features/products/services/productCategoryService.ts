@@ -44,10 +44,27 @@ class ProductCategoryService {
           throw new Error(errorData.details);
         }
         // If we have data but no specific error message, show generic error
-        throw new Error("An error occurred. Please try again.");
+        throw new Error(`HTTP error! status: ${response.status}`);
       } catch (parseError) {
-        // If parsing fails, show generic error
-        throw new Error("An error occurred. Please try again.");
+        // If JSON parsing fails, try to get text response
+        if (
+          parseError instanceof Error &&
+          parseError.message.includes("JSON")
+        ) {
+          try {
+            const textError = await response.text();
+            throw new Error(
+              textError || `HTTP error! status: ${response.status}`
+            );
+          } catch {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+        }
+        // If it's already an Error with the message, re-throw it
+        if (parseError instanceof Error) {
+          throw parseError;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
     }
 

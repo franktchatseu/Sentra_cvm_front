@@ -22,7 +22,7 @@ import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useAuth } from "../../../contexts/AuthContext";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 
 const InfoRow = ({
   label,
@@ -400,11 +400,16 @@ export default function ServerDetailsPage() {
           <button
             onClick={handleActivationToggle}
             disabled={isActivationLoading}
-            className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-              server.is_active
-                ? "border-red-200 text-red-600 hover:bg-red-50"
-                : "border-green-200 text-green-600 hover:bg-green-50"
-            } ${isActivationLoading ? "opacity-60" : ""}`}
+            className="inline-flex items-center gap-2 rounded-md text-sm font-medium transition-colors"
+            style={{
+              backgroundColor: button.secondaryAction.background,
+              color: button.secondaryAction.color,
+              border: button.secondaryAction.border,
+              padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+              borderRadius: button.secondaryAction.borderRadius,
+              fontSize: button.secondaryAction.fontSize,
+              opacity: isActivationLoading ? 0.6 : 1,
+            }}
             title={server.is_active ? "Deactivate server" : "Activate server"}
           >
             {isActivationLoading ? (

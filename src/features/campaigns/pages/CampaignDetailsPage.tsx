@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { campaignService } from "../services/campaignService";
@@ -528,7 +528,15 @@ export default function CampaignDetailsPage() {
               <button
                 onClick={handleApproveCampaign}
                 disabled={isApproveLoading}
-                className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 bg-white text-gray-700 border border-gray-200"
+                className="flex items-center gap-2 rounded-md font-semibold text-sm disabled:opacity-50"
+                style={{
+                  backgroundColor: button.secondaryAction.background,
+                  color: button.secondaryAction.color,
+                  border: button.secondaryAction.border,
+                  padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+                  borderRadius: button.secondaryAction.borderRadius,
+                  fontSize: button.secondaryAction.fontSize,
+                }}
               >
                 {isApproveLoading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
@@ -577,7 +585,15 @@ export default function CampaignDetailsPage() {
             <button
               onClick={handlePauseCampaign}
               disabled={isActionLoading}
-              className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 bg-white text-gray-700 border border-gray-200"
+              className="flex items-center gap-2 rounded-md font-semibold text-sm disabled:opacity-50"
+              style={{
+                backgroundColor: button.secondaryAction.background,
+                color: button.secondaryAction.color,
+                border: button.secondaryAction.border,
+                padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+                borderRadius: button.secondaryAction.borderRadius,
+                fontSize: button.secondaryAction.fontSize,
+              }}
             >
               {isActionLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
@@ -592,7 +608,15 @@ export default function CampaignDetailsPage() {
             <button
               onClick={handleResumeCampaign}
               disabled={isActionLoading}
-              className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm disabled:opacity-50 bg-white text-gray-700 border border-gray-200"
+              className="flex items-center gap-2 rounded-md font-semibold text-sm disabled:opacity-50"
+              style={{
+                backgroundColor: button.secondaryAction.background,
+                color: button.secondaryAction.color,
+                border: button.secondaryAction.border,
+                padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+                borderRadius: button.secondaryAction.borderRadius,
+                fontSize: button.secondaryAction.fontSize,
+              }}
             >
               {isActionLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
@@ -616,7 +640,15 @@ export default function CampaignDetailsPage() {
           <div className="relative">
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="px-4 py-2 border border-gray-200 rounded-md font-semibold flex items-center gap-2 text-sm bg-white text-gray-700"
+              className="flex items-center gap-2 rounded-md font-semibold text-sm"
+              style={{
+                backgroundColor: button.secondaryAction.background,
+                color: button.secondaryAction.color,
+                border: button.secondaryAction.border,
+                padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+                borderRadius: button.secondaryAction.borderRadius,
+                fontSize: button.secondaryAction.fontSize,
+              }}
             >
               <MoreHorizontal className="w-4 h-4" />
               More
@@ -645,7 +677,10 @@ export default function CampaignDetailsPage() {
                     setShowDeleteModal(true);
                     setShowMoreMenu(false);
                   }}
-                  className="w-full flex items-center px-4 py-2 text-sm text-red-600"
+                  className="w-full flex items-center px-4 py-2 text-sm"
+                  style={{
+                    color: button.delete.background,
+                  }}
                 >
                   <Trash2 className="w-4 h-4 mr-3" />
                   Delete Campaign

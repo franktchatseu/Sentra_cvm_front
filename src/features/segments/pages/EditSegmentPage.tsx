@@ -10,6 +10,7 @@ import {
 import { segmentService } from "../services/segmentService";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 
 export default function EditSegmentPage() {
@@ -379,19 +380,21 @@ export default function EditSegmentPage() {
                 >
                   Refresh Frequency
                 </label>
-                <select
+                <HeadlessSelect
                   value={refreshFrequency}
-                  onChange={(e) => setRefreshFrequency(e.target.value)}
-                  className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[${color.primary.action}]/20`}
+                  onChange={(value) => setRefreshFrequency(value as string)}
+                  options={[
+                    { label: "Select frequency", value: "" },
+                    { label: "Hourly", value: "hourly" },
+                    { label: "Daily", value: "daily" },
+                    { label: "Weekly", value: "weekly" },
+                    { label: "Monthly", value: "monthly" },
+                    { label: "Manual", value: "manual" },
+                  ]}
+                  placeholder="Select frequency"
                   disabled={isSaving}
-                >
-                  <option value="">Select frequency</option>
-                  <option value="hourly">Hourly</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="manual">Manual</option>
-                </select>
+                  className="w-full"
+                />
               </div>
 
               {/* Business Purpose */}

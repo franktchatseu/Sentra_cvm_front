@@ -44,7 +44,32 @@ class OfferCategoryService {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      try {
+        const errorData = await response.json();
+        // Extract error message from response
+        if (errorData.error) {
+          throw new Error(errorData.error);
+        }
+        if (errorData.message) {
+          throw new Error(errorData.message);
+        }
+        if (errorData.details) {
+          throw new Error(errorData.details);
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      } catch (err) {
+        // If JSON parsing fails, try to get text response
+        if (err instanceof Error && err.message.includes("JSON")) {
+          const textError = await response.text();
+          throw new Error(
+            textError || `HTTP error! status: ${response.status}`
+          );
+        }
+        if (err instanceof Error) {
+          throw err;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     }
 
     return response.json();

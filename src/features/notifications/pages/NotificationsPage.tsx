@@ -10,6 +10,7 @@ import {
 } from "../types/notification";
 import { NOTIFICATION_TYPE_METADATA } from "../types/notification";
 import { color, tw } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -234,49 +235,47 @@ export default function NotificationsPage() {
           </div>
 
           {/* Type Filter */}
-          <select
+          <HeadlessSelect
             value={filter.type || ""}
-            onChange={(e) =>
+            onChange={(value) =>
               setFilter((prev) => ({
                 ...prev,
-                type: e.target.value
-                  ? (e.target.value as NotificationType)
-                  : undefined,
+                type: value ? (value as NotificationType) : undefined,
               }))
             }
-            className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Types</option>
-            {notificationTypes.map((type) => (
-              <option key={type} value={type}>
-                {NOTIFICATION_TYPE_METADATA[type].label}
-              </option>
-            ))}
-          </select>
+            options={[
+              { label: "All Types", value: "" },
+              ...notificationTypes.map((type) => ({
+                label: NOTIFICATION_TYPE_METADATA[type].label,
+                value: type,
+              })),
+            ]}
+            placeholder="All Types"
+            className="w-auto min-w-[150px]"
+          />
 
           {/* Priority Filter */}
-          <select
+          <HeadlessSelect
             value={filter.priority || ""}
-            onChange={(e) =>
+            onChange={(value) =>
               setFilter((prev) => ({
                 ...prev,
-                priority: e.target.value
-                  ? (e.target.value as NotificationPriority)
-                  : undefined,
+                priority: value ? (value as NotificationPriority) : undefined,
               }))
             }
-            className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Priorities</option>
-            {priorities.map((priority) => (
-              <option key={priority} value={priority}>
-                {priority.charAt(0).toUpperCase() + priority.slice(1)}
-              </option>
-            ))}
-          </select>
+            options={[
+              { label: "All Priorities", value: "" },
+              ...priorities.map((priority) => ({
+                label: priority.charAt(0).toUpperCase() + priority.slice(1),
+                value: priority,
+              })),
+            ]}
+            placeholder="All Priorities"
+            className="w-auto min-w-[150px]"
+          />
 
           {/* Read Status Filter */}
-          <select
+          <HeadlessSelect
             value={
               filter.isRead === undefined
                 ? ""
@@ -284,19 +283,20 @@ export default function NotificationsPage() {
                 ? "read"
                 : "unread"
             }
-            onChange={(e) =>
+            onChange={(value) =>
               setFilter((prev) => ({
                 ...prev,
-                isRead:
-                  e.target.value === "" ? undefined : e.target.value === "read",
+                isRead: value === "" ? undefined : value === "read",
               }))
             }
-            className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Status</option>
-            <option value="unread">Unread</option>
-            <option value="read">Read</option>
-          </select>
+            options={[
+              { label: "All Status", value: "" },
+              { label: "Unread", value: "unread" },
+              { label: "Read", value: "read" },
+            ]}
+            placeholder="All Status"
+            className="w-auto min-w-[150px]"
+          />
         </div>
 
         {/* Clear Filters */}

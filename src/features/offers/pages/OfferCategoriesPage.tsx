@@ -17,6 +17,8 @@ import {
   Archive,
   Star,
   X,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
 import { color, tw, button } from "../../../shared/utils/utils";
@@ -35,6 +37,7 @@ import {
 } from "../types/offerCategory";
 import { Offer, UpdateOfferRequest } from "../types/offer";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 const CATALOG_TAG_PREFIX = "catalog:";
 
@@ -409,6 +412,9 @@ function OfferCategoriesPage() {
   const [categoryToDelete, setCategoryToDelete] =
     useState<OfferCategoryType | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingCategoryId, setTogglingCategoryId] = useState<number | null>(
+    null
+  );
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [stats, setStats] = useState<{
     totalCategories: number;
@@ -848,6 +854,34 @@ function OfferCategoriesPage() {
     setShowDeleteModal(true);
   };
 
+  const handleToggleActive = async (category: OfferCategoryType) => {
+    try {
+      setTogglingCategoryId(category.id);
+      const newActiveStatus = !category.is_active;
+
+      if (newActiveStatus) {
+        await offerCategoryService.activateCategory(category.id, {});
+      } else {
+        await offerCategoryService.deactivateCategory(category.id, {});
+      }
+      await Promise.all([loadCategories(true), loadStats()]);
+      success(
+        newActiveStatus ? "Category Activated" : "Category Deactivated",
+        `"${category.name}" has been ${
+          newActiveStatus ? "activated" : "deactivated"
+        } successfully.`
+      );
+    } catch (err) {
+      console.error("Failed to toggle category status:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update category";
+      // Display backend error message directly
+      showError("Cannot Deactivate Category", errorMessage);
+    } finally {
+      setTogglingCategoryId(null);
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
 
@@ -1260,6 +1294,20 @@ function OfferCategoriesPage() {
                     <Eye className="w-4 h-4 text-gray-600" />
                   </button> */}
                   <button
+                    onClick={() => handleToggleActive(category)}
+                    disabled={togglingCategoryId === category.id}
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={category.is_active ? "Deactivate" : "Activate"}
+                  >
+                    {togglingCategoryId === category.id ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : category.is_active ? (
+                      <PowerOff className="w-4 h-4 text-orange-600" />
+                    ) : (
+                      <Power className="w-4 h-4 text-green-600" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => handleEditCategory(category)}
                     className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
@@ -1442,6 +1490,20 @@ function OfferCategoriesPage() {
                   <Eye className="w-4 h-4 text-gray-600" />
                 </button> */}
                   <button
+                    onClick={() => handleToggleActive(category)}
+                    disabled={togglingCategoryId === category.id}
+                    className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={category.is_active ? "Deactivate" : "Activate"}
+                  >
+                    {togglingCategoryId === category.id ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : category.is_active ? (
+                      <PowerOff className="w-4 h-4 text-orange-600" />
+                    ) : (
+                      <Power className="w-4 h-4 text-green-600" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => handleEditCategory(category)}
                     className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                     title="Edit"
@@ -1593,28 +1655,28 @@ function OfferCategoriesPage() {
                       >
                         Status
                       </label>
-                      <select
+                      <HeadlessSelect
                         value={
                           advancedSearch.isActive === null
                             ? ""
                             : advancedSearch.isActive.toString()
                         }
-                        onChange={(e) => {
-                          const value =
-                            e.target.value === ""
-                              ? null
-                              : e.target.value === "true";
+                        onChange={(value) => {
+                          const boolValue =
+                            value === "" ? null : value === "true";
                           setAdvancedSearch((prev) => ({
                             ...prev,
-                            isActive: value,
+                            isActive: boolValue,
                           }));
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Status</option>
-                        <option value="true">Active Only</option>
-                        <option value="false">Inactive Only</option>
-                      </select>
+                        options={[
+                          { label: "All Status", value: "" },
+                          { label: "Active Only", value: "true" },
+                          { label: "Inactive Only", value: "false" },
+                        ]}
+                        placeholder="All Status"
+                        className="w-full"
+                      />
                     </div>
 
                     {/* Date Range */}

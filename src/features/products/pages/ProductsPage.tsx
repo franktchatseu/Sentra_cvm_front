@@ -83,56 +83,59 @@ export default function ProductsPage() {
     }
   };
 
-  const loadProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadProducts = useCallback(
+    async (skipCache = true) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const limit = filters.pageSize || 10;
-      const offset = ((filters.page || 1) - 1) * limit;
+        const limit = filters.pageSize || 10;
+        const offset = ((filters.page || 1) - 1) * limit;
 
-      let response;
-      let productsList: Product[] = [];
+        let response;
+        let productsList: Product[] = [];
 
-      // Use superSearch if we have filters or need inactive products
-      if (
-        filters.search ||
-        filters.categoryId ||
-        filters.isActive !== undefined
-      ) {
-        response = await productService.superSearch({
-          ...(filters.search && { name: filters.search }),
-          ...(filters.categoryId && { category_id: filters.categoryId }),
-          ...(filters.isActive !== undefined && {
-            is_active: filters.isActive,
-          }),
-          limit,
-          offset,
-          skipCache: true,
-        });
-        productsList = response.data || [];
-      } else {
-        response = await productService.getAllProducts({
-          limit,
-          offset,
-          skipCache: true,
-        });
-        productsList = response.data || [];
+        // Use superSearch if we have filters or need inactive products
+        if (
+          filters.search ||
+          filters.categoryId ||
+          filters.isActive !== undefined
+        ) {
+          response = await productService.superSearch({
+            ...(filters.search && { name: filters.search }),
+            ...(filters.categoryId && { category_id: filters.categoryId }),
+            ...(filters.isActive !== undefined && {
+              is_active: filters.isActive,
+            }),
+            limit,
+            offset,
+            skipCache: skipCache,
+          });
+          productsList = response.data || [];
+        } else {
+          response = await productService.getAllProducts({
+            limit,
+            offset,
+            skipCache: skipCache,
+          });
+          productsList = response.data || [];
+        }
+
+        setProducts(productsList);
+        const totalCount = response.pagination?.total || 0;
+        setTotal(totalCount);
+        setTotalPages(Math.ceil(totalCount / limit) || 1);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load products";
+        showError("Failed to load products", message);
+        setError(message);
+      } finally {
+        setLoading(false);
       }
-
-      setProducts(productsList);
-      const totalCount = response.pagination?.total || 0;
-      setTotal(totalCount);
-      setTotalPages(Math.ceil(totalCount / limit) || 1);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to load products";
-      showError("Failed to load products", message);
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+    },
+    [filters]
+  );
 
   // Load products and categories when filters change
   useEffect(() => {
@@ -236,7 +239,7 @@ export default function ProductsPage() {
       );
       setShowDeleteModal(false);
       setProductToDelete(null);
-      loadProducts();
+      loadProducts(true); // Skip cache when refetching after delete
       loadStats(); // Refresh stats cards
     } catch (err: any) {
       console.error("Failed to delete product:", err);

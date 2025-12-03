@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, ArrowRight, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { accountService } from "../../account/services/accountService";
 import { useToast } from "../../../contexts/ToastContext";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 export default function RequestAccountPage() {
   const [formData, setFormData] = useState({
@@ -380,29 +381,31 @@ export default function RequestAccountPage() {
                       <label htmlFor="department">
                         Department <span className="required">*</span>
                       </label>
-                      <select
-                        id="department"
+                      <HeadlessSelect
                         value={formData.department}
-                        onChange={(e) => {
+                        onChange={(value) => {
                           setFormData((prev) => ({
                             ...prev,
-                            department: e.target.value,
+                            department: value as string,
                           }));
                           clearError("department");
                         }}
-                        required
-                        className={validationErrors.department ? "invalid" : ""}
-                      >
-                        <option value="" disabled>
-                          Select your department
-                        </option>
-                        <option value="marketing">Marketing</option>
-                        <option value="sales">Sales</option>
-                        <option value="it">IT</option>
-                        <option value="hr">Human Resources</option>
-                        <option value="finance">Finance</option>
-                        <option value="operations">Operations</option>
-                      </select>
+                        options={[
+                          {
+                            label: "Select your department",
+                            value: "",
+                            disabled: true,
+                          },
+                          { label: "Marketing", value: "marketing" },
+                          { label: "Sales", value: "sales" },
+                          { label: "IT", value: "it" },
+                          { label: "Human Resources", value: "hr" },
+                          { label: "Finance", value: "finance" },
+                          { label: "Operations", value: "operations" },
+                        ]}
+                        placeholder="Select your department"
+                        error={!!validationErrors.department}
+                      />
                       <span
                         className="error-message"
                         style={{

@@ -33,6 +33,8 @@ import {
   X,
   Archive,
   Star,
+  Power,
+  PowerOff,
 } from "lucide-react";
 
 const CATALOG_TAG_PREFIX = "catalog:";
@@ -215,6 +217,9 @@ export default function CampaignCategoriesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [togglingCategoryId, setTogglingCategoryId] = useState<number | null>(
+    null
+  );
   const [stats, setStats] = useState<{
     totalCategories: number;
     activeCategories: number;
@@ -513,6 +518,35 @@ export default function CampaignCategoriesPage() {
     setShowDeleteModal(false);
     setCategoryToDelete(null);
   }, []);
+
+  const handleToggleActive = useCallback(
+    async (category: CampaignCategory) => {
+      try {
+        setTogglingCategoryId(category.id);
+        const newActiveStatus = !category.is_active;
+
+        await campaignService.updateCampaignCategory(category.id, {
+          is_active: newActiveStatus,
+        });
+        await loadCategories(true);
+        showToast(
+          newActiveStatus ? "Category Activated" : "Category Deactivated",
+          `"${category.name}" has been ${
+            newActiveStatus ? "activated" : "deactivated"
+          } successfully.`
+        );
+      } catch (err) {
+        console.error("Failed to toggle category status:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to update category";
+        // Display backend error message directly
+        showError("Cannot Deactivate Category", errorMessage);
+      } finally {
+        setTogglingCategoryId(null);
+      }
+    },
+    [loadCategories, showToast, showError]
+  );
 
   const handleCategorySaved = useCallback(
     async (categoryData: { name: string; description?: string }) => {
@@ -886,6 +920,20 @@ export default function CampaignCategoriesPage() {
                 </h3>
                 <div className="flex items-center space-x-1">
                   <button
+                    onClick={() => handleToggleActive(category)}
+                    disabled={togglingCategoryId === category.id}
+                    className="p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={category.is_active ? "Deactivate" : "Activate"}
+                  >
+                    {togglingCategoryId === category.id ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : category.is_active ? (
+                      <PowerOff className="w-4 h-4 text-orange-600" />
+                    ) : (
+                      <Power className="w-4 h-4 text-green-600" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => handleEditCategory(category)}
                     className="p-2 rounded-md transition-colors"
                     title="Edit"
@@ -968,6 +1016,20 @@ export default function CampaignCategoriesPage() {
                 </button>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleToggleActive(category)}
+                  disabled={togglingCategoryId === category.id}
+                  className="p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={category.is_active ? "Deactivate" : "Activate"}
+                >
+                  {togglingCategoryId === category.id ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : category.is_active ? (
+                    <PowerOff className="w-4 h-4 text-orange-600" />
+                  ) : (
+                    <Power className="w-4 h-4 text-green-600" />
+                  )}
+                </button>
                 <button
                   onClick={() => handleEditCategory(category)}
                   className="p-2 rounded-md transition-colors"
