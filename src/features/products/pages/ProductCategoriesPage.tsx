@@ -25,7 +25,7 @@ import {
 import { Product, CategoryPerformance } from "../types/product";
 import { productCategoryService } from "../services/productCategoryService";
 import { productService } from "../services/productService";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import {
   buildCatalogTag,
@@ -936,10 +936,18 @@ export default function ProductCatalogsPage() {
 
         <button
           onClick={() => setShowAdvancedFilters(true)}
-          className="flex items-center px-4 py-2 rounded-md bg-gray-50 transition-colors text-sm font-medium"
+          className="flex items-center gap-2 rounded-md transition-colors font-medium"
+          style={{
+            backgroundColor: button.secondaryAction.background,
+            color: button.secondaryAction.color,
+            border: button.secondaryAction.border,
+            padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+            borderRadius: button.secondaryAction.borderRadius,
+            fontSize: button.secondaryAction.fontSize,
+          }}
         >
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
+          <Filter className="h-4 w-4" />
+          <span>Filters</span>
         </button>
 
         <div className="flex items-center gap-2">

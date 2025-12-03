@@ -274,9 +274,32 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
           ? (owners as Array<GenericRecord>)
           : [];
       const normalizedOwners = ownersData.map((item: GenericRecord) => {
-        // Handle owner field - check for owner, label, or technical_owner_id
+        // Backend groups by technical_owner_id (always a number)
+        // business_owner can be null, so we prioritize technical_owner_id
         let ownerLabel: string;
         if (
+          item.technical_owner_id !== null &&
+          item.technical_owner_id !== undefined
+        ) {
+          // technical_owner_id is the primary field used for grouping
+          // Check if there's a label/owner name, otherwise use the ID
+          if (
+            item.owner !== null &&
+            item.owner !== undefined &&
+            item.owner !== ""
+          ) {
+            ownerLabel = item.owner as string;
+          } else if (
+            item.label !== null &&
+            item.label !== undefined &&
+            item.label !== ""
+          ) {
+            ownerLabel = item.label as string;
+          } else {
+            // Fallback to displaying the technical owner ID
+            ownerLabel = `Technical Owner ID: ${item.technical_owner_id}`;
+          }
+        } else if (
           item.owner !== null &&
           item.owner !== undefined &&
           item.owner !== ""
@@ -288,12 +311,6 @@ export default function ScheduledJobsAnalyticsPage(): JSX.Element {
           item.label !== ""
         ) {
           ownerLabel = item.label as string;
-        } else if (
-          item.technical_owner_id !== null &&
-          item.technical_owner_id !== undefined
-        ) {
-          // If owner is null but technical_owner_id exists, display it
-          ownerLabel = `Owner ID: ${item.technical_owner_id}`;
         } else {
           ownerLabel = "Unassigned";
         }

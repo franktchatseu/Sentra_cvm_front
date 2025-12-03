@@ -25,7 +25,7 @@ import {
   Copy,
   BarChart3,
 } from "lucide-react";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { campaignService } from "../services/campaignService";
@@ -1043,10 +1043,18 @@ export default function CampaignsPage() {
 
         <button
           onClick={() => setShowAdvancedFilters(true)}
-          className={`flex items-center px-4 py-2 rounded-md bg-gray-50 transition-colors text-sm font-medium`}
+          className="flex items-center gap-2 rounded-md transition-colors font-medium"
+          style={{
+            backgroundColor: button.secondaryAction.background,
+            color: button.secondaryAction.color,
+            border: button.secondaryAction.border,
+            padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+            borderRadius: button.secondaryAction.borderRadius,
+            fontSize: button.secondaryAction.fontSize,
+          }}
         >
-          <Filter className="h-4 w-4 mr-2" />
-          Filters
+          <Filter className="h-4 w-4" />
+          <span>Filters</span>
         </button>
       </div>
 

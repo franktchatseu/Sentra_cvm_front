@@ -32,7 +32,7 @@ import { useConfirm } from "../../../contexts/ConfirmContext";
 import SegmentModal from "../components/SegmentModal";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import DateFormatter from "../../../shared/components/DateFormatter";
 import { useLanguage } from "../../../contexts/LanguageContext";
@@ -1128,10 +1128,18 @@ export default function SegmentManagementPage() {
             />
             <button
               onClick={() => setShowAdvancedFilters(true)}
-              className={`flex items-center px-4 py-2.5  rounded-md bg-gray-50 transition-colors text-base font-medium`}
+              className="flex items-center gap-2 rounded-md transition-colors font-medium"
+              style={{
+                backgroundColor: button.secondaryAction.background,
+                color: button.secondaryAction.color,
+                border: button.secondaryAction.border,
+                padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+                borderRadius: button.secondaryAction.borderRadius,
+                fontSize: button.secondaryAction.fontSize,
+              }}
             >
-              <Filter className="h-5 w-5 mr-2" />
-              Filters
+              <Filter className="h-4 w-4" />
+              <span>Filters</span>
             </button>
           </div>
         </div>

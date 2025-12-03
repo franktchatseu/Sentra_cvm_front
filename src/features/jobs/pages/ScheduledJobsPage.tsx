@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useLanguage } from "../../../contexts/LanguageContext";
@@ -108,6 +109,7 @@ export default function ScheduledJobsPage() {
   const [connectionProfileFilter, setConnectionProfileFilter] = useState<
     number | ""
   >("");
+  const [tenantFilter, setTenantFilter] = useState<number | "">("");
   const [jobCodeFilter, setJobCodeFilter] = useState<string>("");
   const [activeJobsFilter, setActiveJobsFilter] = useState<boolean>(false);
   const [jobTypes, setJobTypes] = useState<Array<{ id: number; name: string }>>(
@@ -170,6 +172,11 @@ export default function ScheduledJobsPage() {
               Number(connectionProfileFilter),
               true
             );
+        } else if (tenantFilter) {
+          response = await scheduledJobService.getScheduledJobsByTenant(
+            Number(tenantFilter),
+            true
+          );
         } else if (hasSearchTerm) {
           // Use search endpoint when there's a search term
           const params: ScheduledJobSearchParams = {
@@ -193,7 +200,7 @@ export default function ScheduledJobsPage() {
             ...overrideParams,
           };
           if (statusFilter) {
-            params.status = statusFilter;
+            params.status = statusFilter as ScheduledJobSearchParams["status"];
           }
           response = await scheduledJobService.listScheduledJobs({
             ...params,
@@ -227,6 +234,7 @@ export default function ScheduledJobsPage() {
       tagFilter,
       scheduleTypeFilter,
       connectionProfileFilter,
+      tenantFilter,
       jobCodeFilter,
       activeJobsFilter,
       showError,
@@ -618,17 +626,7 @@ export default function ScheduledJobsPage() {
         </select>
         <button
           onClick={() => setShowAdvancedFilters(true)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-md transition-colors text-sm font-medium ${
-            jobTypeFilter ||
-            ownerFilter ||
-            tagFilter ||
-            scheduleTypeFilter ||
-            connectionProfileFilter ||
-            jobCodeFilter ||
-            activeJobsFilter
-              ? "bg-[#3b8169] text-white"
-              : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-          }`}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
         >
           <Filter className="h-4 w-4" />
           <span>Filters</span>
@@ -1001,22 +999,21 @@ export default function ScheduledJobsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Job Type
                       </label>
-                      <select
-                        value={jobTypeFilter}
-                        onChange={(e) =>
-                          setJobTypeFilter(
-                            e.target.value ? Number(e.target.value) : ""
-                          )
+                      <HeadlessSelect
+                        options={[
+                          { value: "", label: t.jobs.allJobTypes },
+                          ...jobTypes.map((type) => ({
+                            value: type.id.toString(),
+                            label: type.name,
+                          })),
+                        ]}
+                        value={jobTypeFilter ? jobTypeFilter.toString() : ""}
+                        onChange={(value) =>
+                          setJobTypeFilter(value ? Number(value) : "")
                         }
-                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                      >
-                        <option value="">{t.jobs.allJobTypes}</option>
-                        {jobTypes.map((type) => (
-                          <option key={type.id} value={type.id}>
-                            {type.name}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder={t.jobs.allJobTypes}
+                        className="w-full"
+                      />
                     </div>
 
                     {/* Owner Filter */}
@@ -1056,19 +1053,23 @@ export default function ScheduledJobsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Schedule Type
                       </label>
-                      <select
+                      <HeadlessSelect
+                        options={[
+                          { value: "", label: "All Schedule Types" },
+                          { value: "cron", label: "Cron" },
+                          { value: "interval", label: "Interval" },
+                          { value: "event", label: "Event" },
+                          { value: "manual", label: "Manual" },
+                          { value: "dependency", label: "Dependency" },
+                          { value: "api_trigger", label: "API Trigger" },
+                        ]}
                         value={scheduleTypeFilter}
-                        onChange={(e) => setScheduleTypeFilter(e.target.value)}
-                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
-                      >
-                        <option value="">All Schedule Types</option>
-                        <option value="cron">Cron</option>
-                        <option value="interval">Interval</option>
-                        <option value="event">Event</option>
-                        <option value="manual">Manual</option>
-                        <option value="dependency">Dependency</option>
-                        <option value="api_trigger">API Trigger</option>
-                      </select>
+                        onChange={(value) =>
+                          setScheduleTypeFilter(value as string)
+                        }
+                        placeholder="All Schedule Types"
+                        className="w-full"
+                      />
                     </div>
 
                     {/* Connection Profile Filter */}
@@ -1085,6 +1086,24 @@ export default function ScheduledJobsPage() {
                           )
                         }
                         placeholder="All Profiles"
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Tenant Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tenant ID
+                      </label>
+                      <input
+                        type="number"
+                        value={tenantFilter || ""}
+                        onChange={(e) =>
+                          setTenantFilter(
+                            e.target.value ? Number(e.target.value) : ""
+                          )
+                        }
+                        placeholder="All Tenants"
                         className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3b8169] focus:border-transparent"
                       />
                     </div>
@@ -1130,6 +1149,7 @@ export default function ScheduledJobsPage() {
                         setTagFilter("");
                         setScheduleTypeFilter("");
                         setConnectionProfileFilter("");
+                        setTenantFilter("");
                         setJobCodeFilter("");
                         setActiveJobsFilter(false);
                       }}

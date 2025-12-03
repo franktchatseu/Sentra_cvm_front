@@ -460,8 +460,17 @@ export const buttons = {
   },
 
   secondaryAction: {
+    background: "#F5FCFF",
+    color: "#000000",
+    border: "none",
+    paddingY: "0.75rem",
+    paddingX: "1.5rem",
+    borderRadius: "0.5rem",
+    fontSize: "0.875rem", // text-sm (14px)
+  },
+
+  accentActionbutton: {
     background: "#00BBCC",
-    // color: '#000000',
     color: "#FFFFFF",
     border: "none",
     paddingY: "0.75rem",

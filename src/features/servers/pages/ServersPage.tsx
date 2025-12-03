@@ -32,7 +32,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../../contexts/LanguageContext";
 
@@ -762,7 +762,15 @@ export default function ServersPage() {
           />
           <button
             onClick={() => setShowFilters(true)}
-            className="inline-flex items-center justify-center rounded-md bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            className="inline-flex items-center justify-center gap-2 rounded-md transition-colors font-medium"
+            style={{
+              backgroundColor: button.secondaryAction.background,
+              color: button.secondaryAction.color,
+              border: button.secondaryAction.border,
+              padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+              borderRadius: button.secondaryAction.borderRadius,
+              fontSize: button.secondaryAction.fontSize,
+            }}
           >
             Filters
           </button>

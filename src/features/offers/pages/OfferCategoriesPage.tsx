@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import CatalogItemsModal from "../../../shared/components/CatalogItemsModal";
-import { color, tw } from "../../../shared/utils/utils";
+import { color, tw, button } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
 import { useRemoveFromCatalog } from "../../../shared/hooks/useRemoveFromCatalog";
@@ -1057,10 +1057,18 @@ function OfferCategoriesPage() {
         <div className="flex items-center gap-2 p-1">
           <button
             onClick={() => setShowAdvancedFilters(true)}
-            className="flex items-center px-4 py-2 rounded-md bg-gray-50 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 rounded-md transition-colors font-medium"
+            style={{
+              backgroundColor: button.secondaryAction.background,
+              color: button.secondaryAction.color,
+              border: button.secondaryAction.border,
+              padding: `${button.secondaryAction.paddingY} ${button.secondaryAction.paddingX}`,
+              borderRadius: button.secondaryAction.borderRadius,
+              fontSize: button.secondaryAction.fontSize,
+            }}
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
+            <Filter className="h-4 w-4" />
+            <span>Filters</span>
           </button>
           <button
             onClick={() => setViewMode("grid")}
