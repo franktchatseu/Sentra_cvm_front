@@ -1820,8 +1820,6 @@ export default function CreateOfferPage() {
             throw new Error("User ID not available for saving creatives");
           }
 
-          console.log("Saving creatives:", creatives.length, "creatives");
-
           // Create creatives for each channel/locale combination
           const creativePromises = creatives.map(async (creative) => {
             try {
@@ -1859,18 +1857,14 @@ export default function CreateOfferPage() {
                 created_by: user.user_id,
               };
 
-              console.log("Creating creative with payload:", creativePayload);
               return await offerCreativeService.create(creativePayload);
             } catch (err) {
-              console.error("Failed to create creative:", err, creative);
               throw err;
             }
           });
 
           await Promise.all(creativePromises);
-          console.log("All creatives saved successfully");
         } catch (err) {
-          console.error("Failed to save creatives:", err);
           const errorMessage =
             err instanceof Error ? err.message : "Unknown error occurred";
           showError(

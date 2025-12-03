@@ -15,7 +15,7 @@ import {
   MoreVertical,
   Save,
 } from "lucide-react";
-import { Offer, OfferStatusEnum } from "../types/offer";
+import { Offer, OfferStatusEnum, OfferProductLink } from "../types/offer";
 import { OfferCategoryType } from "../types/offerCategory";
 import { offerService } from "../services/offerService";
 import { offerCategoryService } from "../services/offerCategoryService";
@@ -262,7 +262,10 @@ export default function OfferDetailsPage() {
   );
 
   const loadProducts = useCallback(
-    async (skipCache: boolean = false) => {
+    async (
+      skipCache: boolean = false,
+      preservePrimaryProductId?: number | null
+    ) => {
       if (!id) return;
 
       try {
@@ -276,25 +279,37 @@ export default function OfferDetailsPage() {
 
         // Try to get primary product from dedicated endpoint first (more efficient)
         // If endpoint doesn't exist (404), we'll get it from products list below
+        // BUT: If preservePrimaryProductId is provided, use that instead (to avoid stale data)
         let primaryProductIdFromEndpoint: number | null = null;
-        try {
-          const primaryResponse = await offerService.getPrimaryProductByOffer(
-            Number(id),
-            false
-          );
-          if (primaryResponse.data && primaryResponse.data.product_id) {
-            primaryProductIdFromEndpoint = primaryResponse.data.product_id;
-            setPrimaryProductId(primaryResponse.data.product_id);
+
+        if (preservePrimaryProductId !== undefined) {
+          // We have a primaryProductId to preserve (e.g., just set via API)
+          primaryProductIdFromEndpoint = preservePrimaryProductId;
+          if (preservePrimaryProductId !== null) {
+            setPrimaryProductId(preservePrimaryProductId);
           }
-        } catch (err: any) {
-          // 404 is expected if endpoint doesn't exist - we'll get it from products list instead
-          // Silently ignore 404 errors
-          const errorMessage = err?.message || String(err) || "";
-          if (
-            !errorMessage.includes("404") &&
-            !errorMessage.includes("Not Found")
-          ) {
-            console.warn("Failed to get primary product from endpoint:", err);
+        } else {
+          // Normal flow: fetch from endpoint
+          try {
+            const primaryResponse = await offerService.getPrimaryProductByOffer(
+              Number(id),
+              skipCache
+            );
+            if (primaryResponse.data && primaryResponse.data.product_id) {
+              primaryProductIdFromEndpoint = primaryResponse.data.product_id;
+              const primaryId = Number(primaryResponse.data.product_id);
+              setPrimaryProductId(primaryId);
+            }
+          } catch (err: any) {
+            // 404 is expected if endpoint doesn't exist - we'll get it from products list instead
+            // Silently ignore 404 errors
+            const errorMessage = err?.message || String(err) || "";
+            if (
+              !errorMessage.includes("404") &&
+              !errorMessage.includes("Not Found")
+            ) {
+              // Non-404 error, but we'll continue with products list fallback
+            }
           }
         }
 
@@ -368,7 +383,8 @@ export default function OfferDetailsPage() {
               (p: any) => p.is_primary === true
             );
             if (primaryProduct && primaryProduct.product_id) {
-              setPrimaryProductId(primaryProduct.product_id);
+              const primaryId = Number(primaryProduct.product_id);
+              setPrimaryProductId(primaryId);
             } else {
               setPrimaryProductId(null);
             }
@@ -382,7 +398,7 @@ export default function OfferDetailsPage() {
         setProductsLoading(false);
       }
     },
-    [id, primaryProductId]
+    [id]
   );
 
   const loadCreatives = useCallback(
@@ -998,15 +1014,19 @@ export default function OfferDetailsPage() {
       );
 
       // Update primaryProductId state immediately from response
+      let newPrimaryProductId: number | null = null;
       if (response.data?.primary_product_id) {
-        setPrimaryProductId(response.data.primary_product_id);
+        newPrimaryProductId = Number(response.data.primary_product_id);
+        setPrimaryProductId(newPrimaryProductId);
       } else if (productId === null) {
+        newPrimaryProductId = null;
         setPrimaryProductId(null);
       } else {
+        newPrimaryProductId = productId;
         setPrimaryProductId(productId);
       }
 
-      // Update offer state with the new primary_product_id
+      // Update offer state with the new primary_product_id (no need to refetch offer)
       if (response.data) {
         setOffer((prev) => ({
           ...prev,
@@ -1014,12 +1034,9 @@ export default function OfferDetailsPage() {
         }));
       }
 
-      // Reload products with cache bypassed to get fresh data
-      // This will update the is_primary flags on all products
-      await loadProducts(true);
-
-      // Also reload offer data to ensure everything is in sync
-      await loadOffer(true);
+      // Reload products to update is_primary flags on all products
+      // Pass the primaryProductId we just set to preserve it (avoid stale data from endpoint)
+      await loadProducts(true, newPrimaryProductId);
 
       success(
         "Primary Product Set",
@@ -1526,10 +1543,21 @@ export default function OfferDetailsPage() {
                       `Product ${hasValidProductId ? productId : index + 1}`;
                     // Prioritize primaryProductId from state (fetched with skipCache) over product.is_primary
                     // This ensures we show the correct primary product even if backend returns stale is_primary flags
+                    const productIdForComparison =
+                      product.product_id ?? product.id;
+                    const normalizedProductId =
+                      productIdForComparison != null
+                        ? Number(productIdForComparison)
+                        : null;
+                    const normalizedPrimaryId =
+                      primaryProductId != null
+                        ? Number(primaryProductId)
+                        : null;
                     const isPrimary =
-                      (product.product_id &&
-                        product.product_id === primaryProductId) ||
-                      (product.is_primary && !primaryProductId);
+                      (normalizedProductId !== null &&
+                        normalizedPrimaryId !== null &&
+                        normalizedProductId === normalizedPrimaryId) ||
+                      (product.is_primary && normalizedPrimaryId === null);
                     const isUnlinking =
                       product.link_id && unlinkingProductId === product.link_id;
                     const isSettingPrimary = settingPrimaryId === productId;
