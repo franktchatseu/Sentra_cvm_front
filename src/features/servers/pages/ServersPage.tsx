@@ -286,8 +286,15 @@ export default function ServersPage() {
       return true;
     });
 
-    setFilteredServers(filtered);
-    setTotalCount(filtered.length);
+    // Sort by created_at descending (newest first)
+    const sorted = [...filtered].sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA; // Descending order (newest first)
+    });
+
+    setFilteredServers(sorted);
+    setTotalCount(sorted.length);
   }, [
     sourceServers,
     environmentFilter,
@@ -961,18 +968,22 @@ export default function ServersPage() {
                         className="px-4 sm:px-6 py-3 sm:py-4 text-black text-sm whitespace-nowrap"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <div className="uppercase whitespace-nowrap">
-                          {server.environment || "—"}
+                        <div className="whitespace-nowrap">
+                          {server.environment
+                            ? String(server.environment).replace(/_/g, " ")
+                            : "—"}
                         </div>
-                        <p className="text-xs text-black whitespace-nowrap">
-                          {server.region || "—"}
-                        </p>
+                        {server.region && (
+                          <p className="text-xs text-black whitespace-nowrap">
+                            {String(server.region).replace(/_/g, " ")}
+                          </p>
+                        )}
                       </td>
                       <td
                         className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-black whitespace-nowrap"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <p className="font-mono text-xs text-black whitespace-nowrap">
+                        <p className="text-xs text-black whitespace-nowrap">
                           {`${server.protocol}://${server.host}${
                             server.port ? `:${server.port}` : ""
                           }${server.base_path || ""}`.replace(/\/+$/, "")}

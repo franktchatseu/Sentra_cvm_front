@@ -160,7 +160,7 @@ export default function CreateServerModal({
                 name="code"
                 value={form.code}
                 onChange={handleChange}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm uppercase tracking-wide focus:border-gray-400 focus:outline-none"
+                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
               />
               {errors.code && (
                 <p className="mt-1 text-xs text-red-500">{errors.code}</p>
@@ -216,10 +216,12 @@ export default function CreateServerModal({
                     target: { name: "environment", value: value as string },
                   } as React.ChangeEvent<HTMLInputElement>)
                 }
-                options={["dev", "qa", "uat", "prod"].map((env) => ({
-                  label: env.toUpperCase(),
-                  value: env,
-                }))}
+                options={[
+                  { value: "dev", label: "DEV" },
+                  { value: "staging", label: "STAGING" },
+                  { value: "production", label: "PRODUCTION" },
+                  { value: "dr", label: "DR" },
+                ]}
                 placeholder="Select environment"
                 className="mt-1 w-full"
               />

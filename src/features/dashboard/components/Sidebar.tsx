@@ -316,32 +316,53 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           },
         ],
       },
-
-      {
-        name: "Infrastructure",
-        href: "/dashboard/servers",
-        icon: Server,
+       {
+        name: "Customer Management",
+        href: "/dashboard/customers",
+        icon: Users,
         type: "parent",
-        entity: "servers",
+        entity: "customers",
         children: [
           {
-            name: "Servers",
-            href: "/dashboard/servers",
-            icon: Server,
+            name: "Customers",
+            href: "/dashboard/customers",
+            icon: Users,
             type: "single",
-            entity: "servers",
+            entity: "customers",
           },
           {
-            name: "Connection Profiles",
-            href: "/dashboard/connection-profiles",
-            icon: Database,
+            name: "Customer Identity",
+            href: "/dashboard/customer-identity",
+            icon: Fingerprint,
             type: "single",
-            entity: "servers",
+            entity: "customers",
           },
         ],
       },
-
-      {
+       {
+        name: "User Management",
+        href: "/dashboard/user-management",
+        icon: UserCheck,
+        type: "parent",
+        entity: "users",
+        children: [
+          {
+            name: "All Users",
+            href: "/dashboard/user-management",
+            icon: Users,
+            type: "single",
+            entity: "users",
+          },
+          {
+            name: "Team Roles",
+            href: "/dashboard/team-roles",
+            icon: UserCheck,
+            type: "single",
+            entity: "users",
+          },
+        ],
+      },
+ {
         name: "Reports & Analytics",
         href: "/dashboard/reports",
         icon: LineChart,
@@ -392,30 +413,33 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           },
         ],
       },
-
       {
-        name: "Customer Management",
-        href: "/dashboard/customers",
-        icon: Users,
+        name: "Infrastructure",
+        href: "/dashboard/servers",
+        icon: Server,
         type: "parent",
-        entity: "customers",
+        entity: "servers",
         children: [
           {
-            name: "Customers",
-            href: "/dashboard/customers",
-            icon: Users,
+            name: "Servers",
+            href: "/dashboard/servers",
+            icon: Server,
             type: "single",
-            entity: "customers",
+            entity: "servers",
           },
           {
-            name: "Customer Identity",
-            href: "/dashboard/customer-identity",
-            icon: Fingerprint,
+            name: "Connection Profiles",
+            href: "/dashboard/connection-profiles",
+            icon: Database,
             type: "single",
-            entity: "customers",
+            entity: "servers",
           },
         ],
       },
+
+     
+
+     
       {
         name: "Job Management",
         href: "/dashboard/jobs",
@@ -446,29 +470,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         type: "single",
         entity: "segments",
       },
-      {
-        name: "User Management",
-        href: "/dashboard/user-management",
-        icon: UserCheck,
-        type: "parent",
-        entity: "users",
-        children: [
-          {
-            name: "All Users",
-            href: "/dashboard/user-management",
-            icon: Users,
-            type: "single",
-            entity: "users",
-          },
-          {
-            name: "Team Roles",
-            href: "/dashboard/team-roles",
-            icon: UserCheck,
-            type: "single",
-            entity: "users",
-          },
-        ],
-      },
+     
       {
         name: "Configuration",
         href: "/dashboard/configuration",

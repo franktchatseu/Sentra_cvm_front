@@ -172,6 +172,7 @@ export default function ServerFormPage({ mode }: ServerFormPageProps) {
             Number(form.circuit_breaker_threshold) || undefined,
           tls_enabled: form.tls_enabled,
           authentication_type: form.authentication_type || undefined,
+          user_id: user?.user_id ? String(user.user_id) : undefined,
         };
 
         const updatedServer = await serverService.updateServer(
@@ -209,7 +210,7 @@ export default function ServerFormPage({ mode }: ServerFormPageProps) {
         <button
           type="button"
           onClick={() => navigate("/dashboard/servers")}
-          className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-md text-gray-600"
           aria-label="Back to servers"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -257,7 +258,7 @@ export default function ServerFormPage({ mode }: ServerFormPageProps) {
                 name="code"
                 value={form.code}
                 onChange={handleChange}
-                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm uppercase tracking-wide focus:border-gray-400 focus:outline-none"
+                className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
               />
               {errors.code && (
                 <p className="mt-1 text-xs text-red-500">{errors.code}</p>
@@ -314,9 +315,9 @@ export default function ServerFormPage({ mode }: ServerFormPageProps) {
               <HeadlessSelect
                 options={[
                   { value: "dev", label: "DEV" },
-                  { value: "qa", label: "QA" },
-                  { value: "uat", label: "UAT" },
-                  { value: "prod", label: "PROD" },
+                  { value: "staging", label: "STAGING" },
+                  { value: "production", label: "PRODUCTION" },
+                  { value: "dr", label: "DR" },
                 ]}
                 value={form.environment}
                 onChange={(value) =>
