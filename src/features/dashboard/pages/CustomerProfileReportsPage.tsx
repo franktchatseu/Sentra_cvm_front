@@ -26,6 +26,7 @@ import {
   Search,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color } from "../../../shared/utils/utils";
 import { formatCurrency } from "../../../shared/services/currencyService";
 import type {
@@ -1628,28 +1629,26 @@ export default function CustomerProfileReportsPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <select
+            <HeadlessSelect
               value={tableSegment}
-              onChange={(event) => setTableSegment(event.target.value)}
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
-            >
-              {customerTypeOptions.map((segment) => (
-                <option key={segment} value={segment}>
-                  {segment}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={(value) => setTableSegment(value as string)}
+              options={customerTypeOptions.map((segment) => ({
+                label: segment,
+                value: segment,
+              }))}
+              placeholder="All Segments"
+              className="w-full md:w-48"
+            />
+            <HeadlessSelect
               value={tableRiskFilter}
-              onChange={(event) => setTableRiskFilter(event.target.value)}
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
-            >
-              {["All", "High", "Medium", "Low"].map((option) => (
-                <option key={option} value={option}>
-                  {option} Risk
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setTableRiskFilter(value as string)}
+              options={["All", "High", "Medium", "Low"].map((option) => ({
+                label: `${option} Risk`,
+                value: option,
+              }))}
+              placeholder="All Risk Levels"
+              className="w-full md:w-48"
+            />
             <button
               type="button"
               onClick={handleDownloadCsv}

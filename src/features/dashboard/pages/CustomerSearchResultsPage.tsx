@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import { colors } from "../../../shared/utils/tokens";
 import { color, tw } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import CurrencyFormatter from "../../../shared/components/CurrencyFormatter";
 import DateFormatter from "../../../shared/components/DateFormatter";
 import type {
@@ -845,28 +846,32 @@ export default function CustomerSearchResultsPage() {
                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               />
             </div>
-            <select
+            <HeadlessSelect
               value={eventTypeFilter}
-              onChange={(e) => setEventTypeFilter(e.target.value)}
-              className="px-4 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-            >
-              <option value="all">All Channels</option>
-              <option value="email">Email</option>
-              <option value="sms">SMS</option>
-              <option value="push">Push</option>
-            </select>
-            <select
+              onChange={(value) => setEventTypeFilter(value as string)}
+              options={[
+                { label: "All Channels", value: "all" },
+                { label: "Email", value: "email" },
+                { label: "SMS", value: "sms" },
+                { label: "Push", value: "push" },
+              ]}
+              placeholder="All Channels"
+              className="w-auto min-w-[150px]"
+            />
+            <HeadlessSelect
               value={eventStatusFilter}
-              onChange={(e) => setEventStatusFilter(e.target.value)}
-              className="px-4 py-2.5 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-            >
-              <option value="all">All Status</option>
-              <option value="Sent">Sent</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Opened">Opened</option>
-              <option value="Clicked">Clicked</option>
-              <option value="Read">Read</option>
-            </select>
+              onChange={(value) => setEventStatusFilter(value as string)}
+              options={[
+                { label: "All Status", value: "all" },
+                { label: "Sent", value: "Sent" },
+                { label: "Delivered", value: "Delivered" },
+                { label: "Opened", value: "Opened" },
+                { label: "Clicked", value: "Clicked" },
+                { label: "Read", value: "Read" },
+              ]}
+              placeholder="All Status"
+              className="w-auto min-w-[150px]"
+            />
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
               <input

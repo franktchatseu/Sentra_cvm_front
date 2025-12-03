@@ -10,6 +10,7 @@ import {
   AlignRight,
 } from "lucide-react";
 import { color } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 interface RichTextEditorProps {
   value: string;
@@ -102,18 +103,20 @@ export default function RichTextEditor({
         <div className="flex-1" />
 
         {/* Font Size Selector */}
-        <select
-          onChange={(e) => execCommand("fontSize", e.target.value)}
-          className="text-sm border border-gray-300 rounded px-2 py-1"
-          defaultValue="3"
-        >
-          <option value="1">Tiny</option>
-          <option value="2">Small</option>
-          <option value="3">Normal</option>
-          <option value="4">Medium</option>
-          <option value="5">Large</option>
-          <option value="6">Huge</option>
-        </select>
+        <HeadlessSelect
+          value="3"
+          onChange={(value) => execCommand("fontSize", value as string)}
+          options={[
+            { label: "Tiny", value: "1" },
+            { label: "Small", value: "2" },
+            { label: "Normal", value: "3" },
+            { label: "Medium", value: "4" },
+            { label: "Large", value: "5" },
+            { label: "Huge", value: "6" },
+          ]}
+          placeholder="Font Size"
+          className="w-auto min-w-[100px]"
+        />
       </div>
 
       {/* Editor */}

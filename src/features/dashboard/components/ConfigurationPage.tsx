@@ -55,6 +55,15 @@ export default function ConfigurationPage() {
         navigationPath: "/dashboard/communication-channels",
       },
       {
+        id: "sms-email-routes",
+        name: "SMS/Email Routes",
+        description: "Configure SMS and Email routing for campaign delivery",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "", // Placeholder - doesn't navigate anywhere
+      },
+      {
         id: "campaign-objectives",
         name: "Campaign Objectives",
         description: "Define and manage your campaign objectives",
@@ -292,7 +301,11 @@ export default function ConfigurationPage() {
   });
 
   const handleConfigurationClick = (config: ConfigurationItem) => {
-    navigate(config.navigationPath);
+    // Only navigate if navigationPath is provided and not empty
+    if (config.navigationPath && config.navigationPath.trim() !== "") {
+      navigate(config.navigationPath);
+    }
+    // Otherwise, it's a placeholder and does nothing
   };
 
   return (

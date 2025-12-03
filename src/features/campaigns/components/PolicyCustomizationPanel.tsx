@@ -11,6 +11,7 @@ import {
   DAYS_OF_WEEK,
 } from "../types/communicationPolicyConfig";
 import { color, tw, components } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 
 type PolicyConfig =
   | TimeWindowConfig
@@ -108,20 +109,22 @@ export default function PolicyCustomizationPanel({
             <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
               Period Type
             </label>
-            <select
+            <HeadlessSelect
               value={maxConfig.type}
-              onChange={(e) =>
+              onChange={(value) =>
                 onConfigChange({
                   ...maxConfig,
-                  type: e.target.value as "daily" | "weekly" | "monthly",
+                  type: value as "daily" | "weekly" | "monthly",
                 })
               }
-              className={`${components.input.default} w-full px-3 py-2`}
-            >
-              <option value="daily">Daily Maximum</option>
-              <option value="weekly">Weekly Maximum</option>
-              <option value="monthly">Monthly Maximum</option>
-            </select>
+              options={[
+                { label: "Daily Maximum", value: "daily" },
+                { label: "Weekly Maximum", value: "weekly" },
+                { label: "Monthly Maximum", value: "monthly" },
+              ]}
+              placeholder="Select period type"
+              className="w-full"
+            />
           </div>
           <div>
             <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
@@ -211,27 +214,26 @@ export default function PolicyCustomizationPanel({
                   >
                     Type
                   </label>
-                  <select
+                  <HeadlessSelect
                     value={category.type}
-                    onChange={(e) => {
+                    onChange={(value) => {
                       const newCategories = [...dndConfig.categories];
                       newCategories[index] = {
                         ...category,
-                        type: e.target.value as DNDCategory["type"],
+                        type: value as DNDCategory["type"],
                       };
                       onConfigChange({
                         ...dndConfig,
                         categories: newCategories,
                       });
                     }}
-                    className={`${components.input.default} w-full px-2 py-1 ${tw.caption}`}
-                  >
-                    {DND_CATEGORIES.map((cat) => (
-                      <option key={cat.type} value={cat.type}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={DND_CATEGORIES.map((cat) => ({
+                      label: cat.label,
+                      value: cat.type,
+                    }))}
+                    placeholder="Select type"
+                    className="w-full"
+                  />
                 </div>
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
@@ -240,24 +242,26 @@ export default function PolicyCustomizationPanel({
                     >
                       Status
                     </label>
-                    <select
+                    <HeadlessSelect
                       value={category.status}
-                      onChange={(e) => {
+                      onChange={(value) => {
                         const newCategories = [...dndConfig.categories];
                         newCategories[index] = {
                           ...category,
-                          status: e.target.value as "stop" | "subscribe",
+                          status: value as "stop" | "subscribe",
                         };
                         onConfigChange({
                           ...dndConfig,
                           categories: newCategories,
                         });
                       }}
-                      className={`${components.input.default} w-full px-2 py-1 ${tw.caption}`}
-                    >
-                      <option value="stop">Stop</option>
-                      <option value="subscribe">Subscribe</option>
-                    </select>
+                      options={[
+                        { label: "Stop", value: "stop" },
+                        { label: "Subscribe", value: "subscribe" },
+                      ]}
+                      placeholder="Select status"
+                      className="w-full"
+                    />
                   </div>
                   <button
                     type="button"
@@ -298,19 +302,21 @@ export default function PolicyCustomizationPanel({
             <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>
               Action
             </label>
-            <select
+            <HeadlessSelect
               value={vipConfig.action}
-              onChange={(e) =>
+              onChange={(value) =>
                 onConfigChange({
                   ...vipConfig,
-                  action: e.target.value as "include" | "exclude",
+                  action: value as "include" | "exclude",
                 })
               }
-              className={`${components.input.default} w-full px-3 py-2`}
-            >
-              <option value="include">Include VIP List</option>
-              <option value="exclude">Exclude VIP List</option>
-            </select>
+              options={[
+                { label: "Include VIP List", value: "include" },
+                { label: "Exclude VIP List", value: "exclude" },
+              ]}
+              placeholder="Select action"
+              className="w-full"
+            />
           </div>
           <div>
             <label className={`block ${tw.label} ${tw.textSecondary} mb-2`}>

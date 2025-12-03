@@ -21,6 +21,7 @@ import {
   UserMinus,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color } from "../../../shared/utils/utils";
 import type {
   RangeOption,
@@ -788,19 +789,18 @@ export default function DeliveryEmailReportsPage() {
               placeholder="Search campaign"
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:outline-none md:w-80"
             />
-            <select
+            <HeadlessSelect
               value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as EmailStatus | "All")
+              onChange={(value) =>
+                setStatusFilter(value as EmailStatus | "All")
               }
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-40"
-            >
-              {statusOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option === "All" ? "All Statuses" : option}
-                </option>
-              ))}
-            </select>
+              options={statusOptions.map((option) => ({
+                label: option === "All" ? "All Statuses" : option,
+                value: option,
+              }))}
+              placeholder="All Statuses"
+              className="w-full md:w-40"
+            />
             <button
               type="button"
               onClick={handleDownloadCsv}

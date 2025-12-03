@@ -19,6 +19,7 @@ import {
   Users2,
 } from "lucide-react";
 import { colors } from "../../../shared/utils/tokens";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { formatCurrency } from "../../../shared/services/currencyService";
 import type {
   RangeOption,
@@ -1098,17 +1099,16 @@ export default function CampaignReportsPage() {
               placeholder="Search campaign"
               className="w-full rounded-md border border-gray-200 px-3 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-gray-400 focus:outline-none md:w-80"
             />
-            <select
+            <HeadlessSelect
               value={segmentFilter}
-              onChange={(event) => setSegmentFilter(event.target.value)}
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none md:w-48"
-            >
-              {segmentOptions.map((segment) => (
-                <option key={segment} value={segment}>
-                  {segment}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setSegmentFilter(value as string)}
+              options={segmentOptions.map((segment) => ({
+                label: segment,
+                value: segment,
+              }))}
+              placeholder="All Segments"
+              className="w-full md:w-48"
+            />
             <button
               type="button"
               onClick={handleDownloadCsv}

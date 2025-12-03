@@ -12,6 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import { color, tw, components } from "../../../shared/utils/utils";
+import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import {
   CommunicationPolicyConfiguration,
   CreateCommunicationPolicyRequest,
@@ -256,20 +257,22 @@ export default function CommunicationPolicyModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Period Type
             </label>
-            <select
+            <HeadlessSelect
               value={maxConfig.type}
-              onChange={(e) =>
+              onChange={(value) =>
                 updateConfig("maximumCommunication", (prev) => ({
                   ...prev,
-                  type: e.target.value as "daily" | "weekly" | "monthly",
+                  type: value as "daily" | "weekly" | "monthly",
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm bg-white transition-all"
-            >
-              <option value="daily">Daily Maximum</option>
-              <option value="weekly">Weekly Maximum</option>
-              <option value="monthly">Monthly Maximum</option>
-            </select>
+              options={[
+                { label: "Daily Maximum", value: "daily" },
+                { label: "Weekly Maximum", value: "weekly" },
+                { label: "Monthly Maximum", value: "monthly" },
+              ]}
+              placeholder="Select period type"
+              className="w-full"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -358,27 +361,26 @@ export default function CommunicationPolicyModal({
                   >
                     Type
                   </label>
-                  <select
+                  <HeadlessSelect
                     value={category.type}
-                    onChange={(e) => {
+                    onChange={(value) => {
                       const newCategories = [...dndConfig.categories];
                       newCategories[index] = {
                         ...category,
-                        type: e.target.value as DNDCategory["type"],
+                        type: value as DNDCategory["type"],
                       };
                       updateConfig("dnd", (prev) => ({
                         ...prev,
                         categories: newCategories,
                       }));
                     }}
-                    className={`${components.input.default} w-full px-2 py-1 text-sm`}
-                  >
-                    {DND_CATEGORIES.map((cat) => (
-                      <option key={cat.type} value={cat.type}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={DND_CATEGORIES.map((cat) => ({
+                      label: cat.label,
+                      value: cat.type,
+                    }))}
+                    placeholder="Select type"
+                    className="w-full"
+                  />
                 </div>
                 <button
                   type="button"
@@ -418,19 +420,21 @@ export default function CommunicationPolicyModal({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Action
             </label>
-            <select
+            <HeadlessSelect
               value={vipConfig.action}
-              onChange={(e) =>
+              onChange={(value) =>
                 updateConfig("vipList", (prev) => ({
                   ...prev,
-                  action: e.target.value as "include" | "exclude",
+                  action: value as "include" | "exclude",
                 }))
               }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#588157] focus:border-[#588157] text-sm bg-white transition-all"
-            >
-              <option value="include">Include VIP List</option>
-              <option value="exclude">Exclude VIP List</option>
-            </select>
+              options={[
+                { label: "Include VIP List", value: "include" },
+                { label: "Exclude VIP List", value: "exclude" },
+              ]}
+              placeholder="Select action"
+              className="w-full"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

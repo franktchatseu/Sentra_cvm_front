@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Calendar, AlertCircle } from "lucide-react";
 import { CampaignScheduling } from "../../types/campaign";
 import { color } from "../../../../shared/utils/utils";
+import HeadlessSelect from "../../../../shared/components/ui/HeadlessSelect";
 import { CreateCampaignRequest } from "../../types/campaign";
 
 interface SchedulingStepProps {
@@ -249,19 +250,24 @@ export default function SchedulingStep({
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Time Zone
             </label>
-            <select
+            <HeadlessSelect
               value={scheduling.time_zone}
-              onChange={(e) => updateScheduling({ time_zone: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
-            >
-              <option value="(GMT+02:00) Sudan">(GMT+02:00) Sudan</option>
-              <option value="(GMT+00:00) UTC">
-                UTC (Coordinated Universal Time)
-              </option>
-              <option value="(GMT-05:00) Eastern">Eastern Time (ET)</option>
-              <option value="(GMT-06:00) Central">Central Time (CT)</option>
-              <option value="(GMT+01:00) Paris">Paris (CET/CEST)</option>
-            </select>
+              onChange={(value) =>
+                updateScheduling({ time_zone: value as string })
+              }
+              options={[
+                { label: "(GMT+02:00) Sudan", value: "(GMT+02:00) Sudan" },
+                {
+                  label: "UTC (Coordinated Universal Time)",
+                  value: "(GMT+00:00) UTC",
+                },
+                { label: "Eastern Time (ET)", value: "(GMT-05:00) Eastern" },
+                { label: "Central Time (CT)", value: "(GMT-06:00) Central" },
+                { label: "Paris (CET/CEST)", value: "(GMT+01:00) Paris" },
+              ]}
+              placeholder="Select timezone"
+              className="w-full"
+            />
           </div>
         </div>
       </div>
@@ -279,15 +285,17 @@ export default function SchedulingStep({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Recurrence Pattern
               </label>
-              <select
+              <HeadlessSelect
                 value={recurrencePattern}
-                onChange={(e) => setRecurrencePattern(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
-              >
-                <option value="Weeks">Weeks</option>
-                <option value="Days">Days</option>
-                <option value="Months">Months</option>
-              </select>
+                onChange={(value) => setRecurrencePattern(value as string)}
+                options={[
+                  { label: "Weeks", value: "Weeks" },
+                  { label: "Days", value: "Days" },
+                  { label: "Months", value: "Months" },
+                ]}
+                placeholder="Select pattern"
+                className="w-full"
+              />
             </div>
 
             {/* Recur Every */}
@@ -439,15 +447,19 @@ export default function SchedulingStep({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Start broadcasts
                   </label>
-                  <select
+                  <HeadlessSelect
                     value={startBroadcastBefore}
-                    onChange={(e) => setStartBroadcastBefore(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#3b8169] focus:border-transparent bg-white"
-                  >
-                    <option value="Before">Before</option>
-                    <option value="After">After</option>
-                    <option value="At">At</option>
-                  </select>
+                    onChange={(value) =>
+                      setStartBroadcastBefore(value as string)
+                    }
+                    options={[
+                      { label: "Before", value: "Before" },
+                      { label: "After", value: "After" },
+                      { label: "At", value: "At" },
+                    ]}
+                    placeholder="Select timing"
+                    className="w-full"
+                  />
                 </div>
 
                 {startBroadcastBefore === "At" ? (

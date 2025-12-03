@@ -893,10 +893,34 @@ export default function SegmentManagementPage() {
     activeSegments:
       analyticsData?.healthSummary?.active_segments ??
       allSegments.filter((s) => s.is_active).length,
-    totalCustomers: allSegments.reduce((sum, s) => {
-      const count = s.size_estimate || 0;
-      return sum + count;
-    }, 0),
+    totalCustomers: (() => {
+      // Try to get total customers from generalStats first
+      if (analyticsData?.generalStats) {
+        const stats = analyticsData.generalStats;
+        if (typeof stats.total_customers === "number") {
+          return stats.total_customers;
+        }
+        if (typeof stats.total_customers === "string") {
+          return parseInt(stats.total_customers, 10) || 0;
+        }
+        if (typeof stats.total_members === "number") {
+          return stats.total_members;
+        }
+        if (typeof stats.total_members === "string") {
+          return parseInt(stats.total_members, 10) || 0;
+        }
+      }
+      // Fallback: sum up size_estimate from all segments
+      // Only count segments that have a valid size_estimate (not null/undefined)
+      return allSegments.reduce((sum, s) => {
+        const count = s.size_estimate;
+        // Only add if size_estimate is a valid number (not null, undefined, or 0)
+        if (typeof count === "number" && count > 0) {
+          return sum + count;
+        }
+        return sum;
+      }, 0);
+    })(),
     // Use type distribution from analytics if available
     typeCounts: analyticsData?.typeDistribution
       ? {

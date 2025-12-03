@@ -16,6 +16,7 @@ import {
   SequentialOfferMapping,
 } from "../../types/campaign";
 import { color } from "../../../../shared/utils/utils";
+import HeadlessSelect from "../../../../shared/components/ui/HeadlessSelect";
 
 interface OfferFlowChartProps {
   campaignType: "round_robin" | "multiple_level";
@@ -348,20 +349,22 @@ function IntervalConfigPanel({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Interval Type
           </label>
-          <select
+          <HeadlessSelect
             value={localConfig.interval_type}
-            onChange={(e) =>
+            onChange={(value) =>
               setLocalConfig({
                 ...localConfig,
-                interval_type: e.target.value as "hours" | "days" | "weeks",
+                interval_type: value as "hours" | "days" | "weeks",
               })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
-          >
-            <option value="hours">Hours</option>
-            <option value="days">Days</option>
-            <option value="weeks">Weeks</option>
-          </select>
+            options={[
+              { label: "Hours", value: "hours" },
+              { label: "Days", value: "days" },
+              { label: "Weeks", value: "weeks" },
+            ]}
+            placeholder="Select interval type"
+            className="w-full"
+          />
         </div>
       </div>
 
@@ -421,22 +424,23 @@ function ConditionConfigPanel({
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Condition Type
         </label>
-        <select
+        <HeadlessSelect
           value={localConfig.condition_type}
-          onChange={(e) =>
+          onChange={(value) =>
             setLocalConfig({
               ...localConfig,
-              condition_type: e.target
-                .value as ConditionConfig["condition_type"],
+              condition_type: value as ConditionConfig["condition_type"],
             })
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
-        >
-          <option value="customer_attribute">Customer Attribute</option>
-          <option value="behavior">Behavior</option>
-          <option value="transaction">Transaction</option>
-          <option value="custom">Custom</option>
-        </select>
+          options={[
+            { label: "Customer Attribute", value: "customer_attribute" },
+            { label: "Behavior", value: "behavior" },
+            { label: "Transaction", value: "transaction" },
+            { label: "Custom", value: "custom" },
+          ]}
+          placeholder="Select condition type"
+          className="w-full"
+        />
       </div>
 
       <div>
@@ -459,23 +463,25 @@ function ConditionConfigPanel({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Operator
           </label>
-          <select
+          <HeadlessSelect
             value={localConfig.operator}
-            onChange={(e) =>
+            onChange={(value) =>
               setLocalConfig({
                 ...localConfig,
-                operator: e.target.value as ConditionConfig["operator"],
+                operator: value as ConditionConfig["operator"],
               })
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#588157] focus:border-transparent"
-          >
-            <option value="equals">Equals</option>
-            <option value="not_equals">Not Equals</option>
-            <option value="greater_than">Greater Than</option>
-            <option value="less_than">Less Than</option>
-            <option value="contains">Contains</option>
-            <option value="not_contains">Not Contains</option>
-          </select>
+            options={[
+              { label: "Equals", value: "equals" },
+              { label: "Not Equals", value: "not_equals" },
+              { label: "Greater Than", value: "greater_than" },
+              { label: "Less Than", value: "less_than" },
+              { label: "Contains", value: "contains" },
+              { label: "Not Contains", value: "not_contains" },
+            ]}
+            placeholder="Select operator"
+            className="w-full"
+          />
         </div>
 
         <div>
