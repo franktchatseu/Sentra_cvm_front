@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { productCategoryService } from "../../features/products/services/productCategoryService";
 import { color } from "../utils/utils";
 import { useToast } from "../../contexts/ToastContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface CreateCategoryModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export default function CreateCategoryModal({
   onCategoryCreated,
 }: CreateCategoryModalProps) {
   const { success, error: showError } = useToast();
+  const { user } = useAuth();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDescription, setNewCategoryDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -23,11 +25,30 @@ export default function CreateCategoryModal({
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
 
+    // Ensure created_by is a number
+    const createdBy = user?.user_id;
+    if (!createdBy) {
+      showError("User ID is required", "Please log in again.");
+      return;
+    }
+
+    // Convert to number if it's a string
+    const createdByNumber =
+      typeof createdBy === "string" ? parseInt(createdBy, 10) : createdBy;
+
+    if (isNaN(createdByNumber)) {
+      showError("Invalid user ID", "Please log in again.");
+      return;
+    }
+
     try {
       setIsCreating(true);
       const response = await productCategoryService.createCategory({
         name: newCategoryName.trim(),
         description: newCategoryDescription.trim() || undefined,
+        parent_category_id: undefined, // optional, default to undefined
+        is_active: true, // optional, default to true
+        created_by: createdByNumber, // required, must be a number
       });
 
       success(

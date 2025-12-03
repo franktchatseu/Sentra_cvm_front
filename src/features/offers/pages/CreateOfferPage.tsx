@@ -1436,8 +1436,9 @@ export default function CreateOfferPage() {
     const loadOfferCategories = async () => {
       try {
         setCategoriesLoading(true);
-        const response = await offerCategoryService.getAllCategories({
-          limit: 50, // Get all categories
+        // Only load active offer categories
+        const response = await offerCategoryService.getActiveCategories({
+          limit: 50, // Get all active categories
           skipCache: true,
         });
         setOfferCategories(response.data || []);

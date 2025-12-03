@@ -64,14 +64,18 @@ export default function MultiCategorySelector({
       setIsLoading(true);
       setError(null);
 
-      // Load categories based on entity type
+      // Load categories based on entity type - only show active ones
       let categoriesData: ProductCategory[] = [];
 
       if (entityType === "campaign") {
         const { campaignService } = await import(
           "../../features/campaigns/services/campaignService"
         );
-        const response = await campaignService.getCampaignCategories();
+        // Use active campaign categories
+        const response = await campaignService.getActiveCampaignCategories({
+          limit: 100,
+          skipCache: true,
+        });
         categoriesData = Array.isArray(response)
           ? response
           : (response as { data: ProductCategory[] }).data || [];
@@ -79,7 +83,8 @@ export default function MultiCategorySelector({
         const { offerCategoryService } = await import(
           "../../features/offers/services/offerCategoryService"
         );
-        const response = await offerCategoryService.getAllCategories({
+        // Use active offer categories
+        const response = await offerCategoryService.getActiveCategories({
           limit: 100,
           skipCache: true,
         });
@@ -89,20 +94,30 @@ export default function MultiCategorySelector({
           "../../features/segments/services/segmentService"
         );
         const response = await segmentService.getSegmentCategories();
-        // Convert segment categories to ProductCategory format
-        categoriesData = (response.data || []).map(
-          (cat: { id: number; name: string }) => ({
-            id: cat.id,
-            name: cat.name,
-            description: "",
-            is_active: true,
-            created_at: "",
-            updated_at: "",
-          })
-        );
+        // Filter to only active segment categories and convert to ProductCategory format
+        categoriesData = (response.data || [])
+          .filter(
+            (cat: { id: number; name: string; is_active?: boolean }) =>
+              cat.is_active !== false // Only include active categories (default to true if not specified)
+          )
+          .map(
+            (cat: {
+              id: number;
+              name: string;
+              description?: string | null;
+              is_active?: boolean;
+            }) => ({
+              id: cat.id,
+              name: cat.name,
+              description: cat.description || "",
+              is_active: cat.is_active !== false,
+              created_at: "",
+              updated_at: "",
+            })
+          );
       } else {
-        // Default to product categories
-        const response = await productCategoryService.getAllCategories({
+        // Default to product categories - only show active ones
+        const response = await productCategoryService.getActiveCategories({
           limit: 100,
           skipCache: true,
         });

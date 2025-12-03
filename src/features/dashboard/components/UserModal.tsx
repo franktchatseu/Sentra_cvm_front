@@ -184,7 +184,6 @@ export default function UserModal({
         const updateData: UpdateUserRequest = {
           first_name: formData.first_name,
           last_name: formData.last_name,
-          email_address: formData.email_address,
           department: formData.department || undefined,
         };
         await userService.updateUser(user.id, updateData);
@@ -364,10 +363,20 @@ export default function UserModal({
                     value={formData.email_address}
                     onChange={handleChange}
                     required
-                    className={`block w-full pl-10 pr-3 py-3 border ${tw.borderDefault} rounded-md focus:outline-none transition-all duration-200 text-sm`}
+                    disabled={!!user}
+                    className={`block w-full pl-10 pr-3 py-3 border ${
+                      tw.borderDefault
+                    } rounded-md focus:outline-none transition-all duration-200 text-sm ${
+                      user ? "bg-gray-100 cursor-not-allowed opacity-75" : ""
+                    }`}
                     placeholder="email@example.com"
                   />
                 </div>
+                {user && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Email cannot be changed after user creation
+                  </p>
+                )}
               </div>
 
               {!user && (

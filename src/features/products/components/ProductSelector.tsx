@@ -36,7 +36,8 @@ export default function ProductSelector({
 
   const loadCategories = useCallback(async () => {
     try {
-      const response = await productCategoryService.getAllCategories({
+      // Only show active product categories
+      const response = await productCategoryService.getActiveCategories({
         limit: 100,
         skipCache: true,
       });

@@ -144,8 +144,12 @@ class ConnectionProfileService {
     return this.unwrapData<ConnectionProfileType>(response);
   }
 
-  async getProfile(id: number): Promise<ConnectionProfileType> {
-    const response = await this.request<unknown>(`/${id}`);
+  async getProfile(
+    id: number,
+    skipCache: boolean = true
+  ): Promise<ConnectionProfileType> {
+    const endpoint = this.withSkipCache(`/${id}`, skipCache);
+    const response = await this.request<unknown>(endpoint);
     return this.unwrapData<ConnectionProfileType>(response);
   }
 

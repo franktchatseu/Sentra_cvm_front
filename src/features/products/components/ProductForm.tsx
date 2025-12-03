@@ -241,6 +241,9 @@ export default function ProductForm({
                 entityType="product"
                 refreshTrigger={refreshTrigger}
                 className="w-full"
+                allowCreate={true}
+                onCreateCategory={() => onShowCreateModal(true)}
+                onCategoryCreated={onCategoryCreated}
               />
             </div>
 

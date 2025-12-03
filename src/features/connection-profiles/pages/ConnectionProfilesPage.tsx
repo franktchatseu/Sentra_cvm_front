@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../contexts/ConfirmContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import { color, tw } from "../../../shared/utils/utils";
@@ -47,9 +48,9 @@ const CLASSIFICATION_OPTIONS = [
   "restricted",
 ];
 
-const ENVIRONMENT_FALLBACKS = ["dev", "staging", "production"];
+const ENVIRONMENT_FALLBACKS = ["development", "staging", "production"];
 
-const VALID_ENVIRONMENTS = ["dev", "staging", "production"];
+const VALID_ENVIRONMENTS = ["development", "staging", "production"];
 
 const DEFAULT_FILTERS = {
   connectionType: "all",
@@ -64,6 +65,7 @@ export default function ConnectionProfilesPage() {
   const navigate = useNavigate();
   const { error: showError, success: showSuccess } = useToast();
   const { confirm } = useConfirm();
+  const { user } = useAuth();
 
   const [profiles, setProfiles] = useState<ConnectionProfileType[]>([]);
   const [filteredProfiles, setFilteredProfiles] = useState<
@@ -414,13 +416,19 @@ export default function ConnectionProfilesPage() {
 
     try {
       if (action === "activate") {
-        await connectionProfileService.activateProfile(profile.id);
+        await connectionProfileService.activateProfile(
+          profile.id,
+          user?.user_id
+        );
         showSuccess(
           "Profile activated",
           `${profile.profile_name} is now active.`
         );
       } else {
-        await connectionProfileService.deactivateProfile(profile.id);
+        await connectionProfileService.deactivateProfile(
+          profile.id,
+          user?.user_id
+        );
         showSuccess(
           "Profile deactivated",
           `${profile.profile_name} is now inactive.`

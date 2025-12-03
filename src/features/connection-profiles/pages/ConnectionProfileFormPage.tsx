@@ -34,7 +34,7 @@ export default function ConnectionProfileFormPage({
     profile_code: "",
     connection_type: "database",
     load_strategy: "full",
-    environment: "dev",
+    environment: "development",
     batch_size: 1000,
     parallel_threads: 4,
     min_pool_size: 2,
@@ -279,7 +279,7 @@ export default function ConnectionProfileFormPage({
               </label>
               <HeadlessSelect
                 options={[
-                  { value: "dev", label: "Dev" },
+                  { value: "development", label: "Development" },
                   { value: "staging", label: "Staging" },
                   { value: "production", label: "Production" },
                 ]}
@@ -287,7 +287,7 @@ export default function ConnectionProfileFormPage({
                 onChange={(value) =>
                   setFormData({
                     ...formData,
-                    environment: (value || "dev") as any,
+                    environment: (value || "development") as any,
                   })
                 }
               />

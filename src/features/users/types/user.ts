@@ -232,7 +232,6 @@ export type UpdateUserRequest = {
   last_name?: string;
   middle_name?: string | null;
   preferred_name?: string | null;
-  email_address?: string;
   phone_number?: string | null;
   department?: string | null;
   job_title?: string | null;

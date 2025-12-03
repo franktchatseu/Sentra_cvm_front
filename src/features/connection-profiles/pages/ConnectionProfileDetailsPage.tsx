@@ -23,6 +23,7 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import DateFormatter from "../../../shared/components/DateFormatter";
 import { useToast } from "../../../contexts/ToastContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { color, tw } from "../../../shared/utils/utils";
 import RegularModal from "../../../shared/components/ui/RegularModal";
 
@@ -30,6 +31,7 @@ export default function ConnectionProfileDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
+  const { user } = useAuth();
 
   const [profile, setProfile] = useState<ConnectionProfileType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,7 @@ export default function ConnectionProfileDetailsPage() {
 
     try {
       setLoading(true);
-      const data = await connectionProfileService.getProfile(Number(id));
+      const data = await connectionProfileService.getProfile(Number(id), true);
       setProfile(data);
       setHealthStatus(
         data.last_health_check_status === "unhealthy" ? "unhealthy" : "healthy"
@@ -136,10 +138,16 @@ export default function ConnectionProfileDetailsPage() {
     setTogglingStatus(true);
     try {
       if (profile.is_active) {
-        await connectionProfileService.deactivateProfile(profile.id);
+        await connectionProfileService.deactivateProfile(
+          profile.id,
+          user?.user_id
+        );
         success("Connection profile deactivated");
       } else {
-        await connectionProfileService.activateProfile(profile.id);
+        await connectionProfileService.activateProfile(
+          profile.id,
+          user?.user_id
+        );
         success("Connection profile activated");
       }
       await loadProfile();

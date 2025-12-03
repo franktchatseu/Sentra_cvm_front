@@ -527,10 +527,30 @@ export default function CampaignCategoriesPage() {
           await loadCategories(true);
           showToast("Category updated successfully");
         } else {
-          // Create new category
+          // Create new category - ensure created_by is a number
+          const createdBy = user?.user_id;
+          if (!createdBy) {
+            showError("User ID is required", "Please log in again.");
+            return;
+          }
+
+          // Convert to number if it's a string
+          const createdByNumber =
+            typeof createdBy === "string" ? parseInt(createdBy, 10) : createdBy;
+
+          if (isNaN(createdByNumber)) {
+            showError("Invalid user ID", "Please log in again.");
+            return;
+          }
+
+          // Create new category with all required and optional fields
           await campaignService.createCampaignCategory({
-            ...categoryData,
-            created_by: user?.user_id,
+            name: categoryData.name,
+            description: categoryData.description || "", // required, default to empty string
+            parent_category_id: null, // optional, default to null
+            display_order: 10, // optional, default to 10
+            is_active: true, // optional, default to true
+            created_by: createdByNumber, // required, must be a number
           });
           await loadCategories(true);
           showToast("Category created successfully");
@@ -543,7 +563,7 @@ export default function CampaignCategoriesPage() {
         setIsSaving(false);
       }
     },
-    [editingCategory, loadCategories, showToast, showError]
+    [editingCategory, loadCategories, showToast, showError, user]
   );
 
   const handleViewCampaigns = useCallback(

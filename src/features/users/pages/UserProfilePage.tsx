@@ -40,9 +40,8 @@ export default function UserProfilePage() {
   const [formData, setFormData] = useState<UpdateUserRequest>({
     first_name: "",
     last_name: "",
-    middle_name: null,
-    preferred_name: null,
-    email_address: "",
+    // middle_name: null,
+    // preferred_name: null,
     phone_number: null,
     department: null,
     job_title: null,
@@ -76,9 +75,8 @@ export default function UserProfilePage() {
         setFormData({
           first_name: userData.first_name || "",
           last_name: userData.last_name || "",
-          middle_name: userData.middle_name || null,
-          preferred_name: userData.preferred_name || null,
-          email_address: userData.email_address || userData.email || "",
+          // middle_name: userData.middle_name || null,
+          // preferred_name: userData.preferred_name || null,
           phone_number: userData.phone_number || null,
           department: userData.department || null,
           job_title: userData.job_title || null,
@@ -100,8 +98,8 @@ export default function UserProfilePage() {
   const nullableFields = useMemo(
     () =>
       new Set([
-        "middle_name",
-        "preferred_name",
+        // "middle_name",
+        // "preferred_name",
         "phone_number",
         "department",
         "job_title",
@@ -164,9 +162,8 @@ export default function UserProfilePage() {
       setFormData({
         first_name: user.first_name || "",
         last_name: user.last_name || "",
-        middle_name: user.middle_name || null,
-        preferred_name: user.preferred_name || null,
-        email_address: user.email_address || user.email || "",
+        // middle_name: user.middle_name || null,
+        // preferred_name: user.preferred_name || null,
         phone_number: user.phone_number || null,
         department: user.department || null,
         job_title: user.job_title || null,
@@ -298,12 +295,12 @@ export default function UserProfilePage() {
             </div>
             <div>
               <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>
-                {user.first_name} {user.middle_name} {user.last_name}
-                {user.preferred_name && (
+                {user.first_name} {/* {user.middle_name} */} {user.last_name}
+                {/* {user.preferred_name && (
                   <span className="text-gray-500 font-normal ml-2">
                     ({user.preferred_name})
                   </span>
-                )}
+                )} */}
               </h2>
               <p className={`text-sm ${tw.textSecondary} mt-1`}>
                 {user.email_address || user.email}
@@ -355,7 +352,7 @@ export default function UserProfilePage() {
               )}
             </div>
 
-            <div>
+            {/* <div>
               <label
                 className={`block text-sm font-medium ${tw.textSecondary} mb-1`}
               >
@@ -374,7 +371,7 @@ export default function UserProfilePage() {
                   {user.middle_name || "N/A"}
                 </p>
               )}
-            </div>
+            </div> */}
 
             <div>
               <label
@@ -397,7 +394,7 @@ export default function UserProfilePage() {
               )}
             </div>
 
-            <div>
+            {/* <div>
               <label
                 className={`block text-sm font-medium ${tw.textSecondary} mb-1`}
               >
@@ -416,7 +413,7 @@ export default function UserProfilePage() {
                   {user.preferred_name || "N/A"}
                 </p>
               )}
-            </div>
+            </div> */}
 
             <div>
               <label
@@ -425,19 +422,12 @@ export default function UserProfilePage() {
                 <Mail className="w-4 h-4" />
                 Email Address
               </label>
-              {isEditing ? (
-                <input
-                  type="email"
-                  name="email_address"
-                  value={formData.email_address}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              ) : (
-                <p className={`text-sm ${tw.textPrimary}`}>
-                  {user.email_address || user.email || "N/A"}
-                </p>
-              )}
+              <p className={`text-sm ${tw.textPrimary}`}>
+                {user.email_address || user.email || "N/A"}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Email cannot be changed
+              </p>
             </div>
 
             <div>
