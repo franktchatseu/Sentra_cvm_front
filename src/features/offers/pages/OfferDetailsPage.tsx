@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useClickOutside } from "../../../shared/hooks/useClickOutside";
 import {
@@ -38,10 +38,16 @@ import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import RegularModal from "../../../shared/components/ui/RegularModal";
 import DeleteConfirmModal from "../../../shared/components/ui/DeleteConfirmModal";
 import { Product } from "../../products/types/product";
-import { Search, Check } from "lucide-react";
+import { Search, Check, FileText, Eye } from "lucide-react";
 import { productCategoryService } from "../../products/services/productCategoryService";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import DateFormatter from "../../../shared/components/DateFormatter";
+import { useConfigurationData } from "../../../shared/services/configurationDataService";
+import { TypeConfigurationItem } from "../../../shared/components/TypeConfigurationPage";
+import {
+  SMSSmartphonePreview,
+  EmailLaptopPreview,
+} from "../components/CreativePreviewComponents";
 
 const localeLabelMap: Record<string, string> = {
   en: "English",
@@ -184,6 +190,50 @@ export default function OfferDetailsPage() {
     is_active: true,
   });
   const [newCreativeVariables, setNewCreativeVariables] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
+    null
+  );
+
+  // Preview modal state
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewResult, setPreviewResult] = useState<{
+    rendered_title?: string;
+    rendered_text_body?: string;
+    rendered_html_body?: string;
+  } | null>(null);
+
+  // Load creative templates from configuration
+  const { data: templates } = useConfigurationData("creativeTemplates");
+
+  // Helper to replace variables in text
+  const replaceVariables = (
+    text: string,
+    variables: Record<string, string | number | boolean> = {}
+  ): string => {
+    if (!text) return "";
+    let result = text;
+    Object.keys(variables).forEach((key) => {
+      const value = String(variables[key]);
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+      result = result.replace(regex, value);
+    });
+    return result;
+  };
+
+  // Filter templates by channel
+  const getTemplatesForChannel = (channel: CreativeChannel) => {
+    return (templates as TypeConfigurationItem[]).filter(
+      (template) =>
+        template.isActive &&
+        template.metadataValue?.toLowerCase() === channel.toLowerCase()
+    );
+  };
+
+  // Get available templates for current channel
+  const availableTemplates = useMemo(
+    () => getTemplatesForChannel(newCreativeForm.channel),
+    [newCreativeForm.channel, templates]
+  );
 
   // Add product modal state
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -213,6 +263,81 @@ export default function OfferDetailsPage() {
       is_active: true,
     });
     setNewCreativeVariables("");
+    setSelectedTemplateId(null);
+    setPreviewResult(null);
+    setIsPreviewOpen(false);
+  };
+
+  // Handle template selection
+  const handleTemplateSelect = (templateId: number | null) => {
+    if (!templateId) {
+      setSelectedTemplateId(null);
+      return;
+    }
+
+    const template = templates.find((t) => t.id === templateId) as
+      | TypeConfigurationItem
+      | undefined;
+    if (!template) return;
+
+    setSelectedTemplateId(templateId);
+
+    // Get template variables (default values)
+    const templateVariables = template.variables || {};
+
+    // Update form with template content (replace placeholders with actual values)
+    setNewCreativeForm((prev) => ({
+      ...prev,
+      // Set channel if template has a specific channel
+      channel: (template.metadataValue as CreativeChannel) || prev.channel,
+      // Populate title, text_body, html_body if template has them
+      title: template.title
+        ? replaceVariables(template.title, templateVariables)
+        : prev.title,
+      text_body: template.text_body
+        ? replaceVariables(template.text_body, templateVariables)
+        : prev.text_body,
+      html_body: template.html_body
+        ? replaceVariables(template.html_body, templateVariables)
+        : prev.html_body,
+    }));
+
+    // Update variables JSON
+    if (template.variables) {
+      setNewCreativeVariables(JSON.stringify(template.variables, null, 2));
+    }
+  };
+
+  // Handle preview button click
+  const handlePreview = () => {
+    // Parse variables from JSON
+    let parsedVariables: Record<string, string | number | boolean> = {};
+    if (newCreativeVariables.trim()) {
+      try {
+        parsedVariables = JSON.parse(newCreativeVariables);
+      } catch {
+        // Invalid JSON, use empty object
+      }
+    }
+
+    // Create client-side preview (creative not saved yet)
+    const clientPreview = {
+      rendered_title: replaceVariables(
+        newCreativeForm.title || "",
+        parsedVariables
+      ),
+      rendered_text_body: replaceVariables(
+        newCreativeForm.text_body || "",
+        parsedVariables
+      ),
+      rendered_html_body: replaceVariables(
+        newCreativeForm.html_body || "",
+        parsedVariables
+      ),
+    };
+
+    setPreviewResult(clientPreview);
+    setIsPreviewOpen(true);
   };
 
   const loadOffer = useCallback(
@@ -1975,12 +2100,14 @@ export default function OfferDetailsPage() {
               </label>
               <HeadlessSelect
                 value={newCreativeForm.channel}
-                onChange={(value) =>
+                onChange={(value) => {
                   setNewCreativeForm((prev) => ({
                     ...prev,
                     channel: value as CreativeChannel,
-                  }))
-                }
+                  }));
+                  // Clear template when channel changes
+                  setSelectedTemplateId(null);
+                }}
                 options={creativeChannelOptions}
                 placeholder="Select a channel"
               />
@@ -2003,6 +2130,53 @@ export default function OfferDetailsPage() {
               />
             </div>
           </div>
+
+          {/* Template Selector */}
+          {availableTemplates.length > 0 && (
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Creative Template (Optional)
+                </label>
+                {selectedTemplateId && (
+                  <button
+                    onClick={() => handleTemplateSelect(null)}
+                    className="text-xs text-gray-500 underline"
+                  >
+                    Clear Template
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <HeadlessSelect
+                  value={
+                    selectedTemplateId ? selectedTemplateId.toString() : ""
+                  }
+                  onChange={(value) =>
+                    handleTemplateSelect(value ? Number(value) : null)
+                  }
+                  options={[
+                    { value: "", label: "Select template" },
+                    ...availableTemplates.map((template) => ({
+                      value: template.id.toString(),
+                      label: `${template.name}${
+                        template.description ? ` - ${template.description}` : ""
+                      }`,
+                    })),
+                  ]}
+                  placeholder="Select a template to start with..."
+                />
+                {selectedTemplateId && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                    <FileText className="w-3 h-3" />
+                    <span>
+                      Template selected. You can customize the fields below.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2100,32 +2274,46 @@ export default function OfferDetailsPage() {
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-between items-center pt-4 border-t">
             <button
-              onClick={() => {
-                setIsAddCreativeModalOpen(false);
-                resetNewCreativeForm();
-              }}
-              disabled={isCreatingCreative}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+              onClick={handlePreview}
+              disabled={
+                !newCreativeForm.title &&
+                !newCreativeForm.text_body &&
+                !newCreativeForm.html_body
+              }
+              className="px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
-              Cancel
+              <Eye className="w-4 h-4" />
+              Preview
             </button>
-            <button
-              onClick={handleCreateCreative}
-              disabled={isCreatingCreative}
-              className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
-              style={{ backgroundColor: color.primary.action }}
-            >
-              {isCreatingCreative ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Creating Creative...</span>
-                </>
-              ) : (
-                <span>Create Creative</span>
-              )}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsAddCreativeModalOpen(false);
+                  resetNewCreativeForm();
+                }}
+                disabled={isCreatingCreative}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateCreative}
+                disabled={isCreatingCreative}
+                className="px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+                style={{ backgroundColor: color.primary.action }}
+              >
+                {isCreatingCreative ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Creating Creative...</span>
+                  </>
+                ) : (
+                  <span>Create Creative</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </RegularModal>
@@ -2549,6 +2737,112 @@ export default function OfferDetailsPage() {
         cancelText="Cancel"
         variant="delete"
       />
+
+      {/* Preview Creative Modal */}
+      <RegularModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPreviewResult(null);
+        }}
+        title="Creative Preview"
+        size="2xl"
+      >
+        <div className="space-y-6">
+          {previewResult ? (
+            <div className="space-y-6">
+              {/* Device-Specific Previews */}
+              {newCreativeForm.channel === "SMS" ||
+              newCreativeForm.channel === "SMS Flash" ? (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                    SMS Preview
+                  </h3>
+                  <SMSSmartphonePreview
+                    message={
+                      previewResult.rendered_text_body ||
+                      previewResult.rendered_title ||
+                      ""
+                    }
+                    title={previewResult.rendered_title}
+                  />
+                </div>
+              ) : newCreativeForm.channel === "Email" ? (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                    Email Preview
+                  </h3>
+                  <EmailLaptopPreview
+                    title={previewResult.rendered_title}
+                    htmlBody={previewResult.rendered_html_body}
+                    textBody={previewResult.rendered_text_body}
+                  />
+                </div>
+              ) : (
+                // Fallback for other channels (Web, USSD, etc.)
+                <div className="space-y-4">
+                  {previewResult.rendered_title && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rendered Title
+                      </label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <p className="text-gray-900">
+                          {previewResult.rendered_title}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {previewResult.rendered_text_body && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rendered Text Body
+                      </label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <p className="text-gray-900 whitespace-pre-wrap">
+                          {previewResult.rendered_text_body}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {previewResult.rendered_html_body && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rendered HTML Body
+                      </label>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                        <div
+                          className="prose max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: previewResult.rendered_html_body,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {!previewResult.rendered_title &&
+                    !previewResult.rendered_text_body &&
+                    !previewResult.rendered_html_body && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>
+                          No content to preview. Add title, text body, or HTML
+                          body.
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>No preview available.</p>
+            </div>
+          )}
+        </div>
+      </RegularModal>
     </div>
   );
 }

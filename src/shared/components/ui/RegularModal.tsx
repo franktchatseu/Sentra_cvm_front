@@ -84,7 +84,9 @@ export default function RegularModal({
                 </div>
 
                 {/* Content */}
-                <div className="px-6 py-4 overflow-visible">{children}</div>
+                <div className="px-6 py-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
+                  {children}
+                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>
