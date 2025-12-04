@@ -2156,7 +2156,7 @@ export default function CreateOfferPage() {
           </div>
 
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 onClick={() => navigate("/dashboard/offers")}
                 className="text-gray-400 hover:text-gray-600 transition-colors"

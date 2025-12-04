@@ -176,7 +176,7 @@ export default function ConfigurationDetailsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-2 sm:gap-4 mb-4">
           <button
             onClick={() => navigate("/dashboard/configuration")}
             className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"

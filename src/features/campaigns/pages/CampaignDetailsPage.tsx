@@ -508,7 +508,7 @@ export default function CampaignDetailsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button onClick={handleBack} className="p-2 text-gray-600 rounded-md">
             <ArrowLeft className="w-5 h-5" />
           </button>

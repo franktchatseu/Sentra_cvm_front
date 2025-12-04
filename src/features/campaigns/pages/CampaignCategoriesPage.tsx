@@ -763,7 +763,7 @@ export default function CampaignCategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate("/dashboard/campaigns")}
             className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
@@ -1005,40 +1005,42 @@ export default function CampaignCategoriesPage() {
           {filteredCampaignCategories.map((category) => (
             <div
               key={category.id}
-              className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-all"
               style={{ backgroundColor: color.surface.cards }}
             >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex-1">
-                  <h3 className={`${tw.cardHeading} text-gray-900 truncate`}>
-                    {category.name}
-                  </h3>
-                  <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
-                    {(() => {
-                      // Use campaign_count from backend (already calculated correctly)
-                      const count = category.campaign_count || 0;
-                      return (
-                        <>
-                          {count} campaign
-                          {count !== 1 ? "s" : ""}
-                        </>
-                      );
-                    })()}
-                  </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="flex-1">
+                    <h3 className={`${tw.cardHeading} text-gray-900 truncate`}>
+                      {category.name}
+                    </h3>
+                    <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
+                      {(() => {
+                        // Use campaign_count from backend (already calculated correctly)
+                        const count = category.campaign_count || 0;
+                        return (
+                          <>
+                            {count} campaign
+                            {count !== 1 ? "s" : ""}
+                          </>
+                        );
+                      })()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleViewCampaigns(category)}
+                    className="text-sm font-medium text-gray-700 hover:underline transition-colors"
+                    title="View & Assign Campaigns"
+                  >
+                    View Campaigns
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleViewCampaigns(category)}
-                  className="text-sm font-medium text-gray-700 hover:underline transition-colors"
-                  title="View & Assign Campaigns"
-                >
-                  View Campaigns
-                </button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
                 <button
                   onClick={() => handleToggleActive(category)}
                   disabled={togglingCategoryId === category.id}
-                  className="p-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title={category.is_active ? "Deactivate" : "Activate"}
                 >
                   {togglingCategoryId === category.id ? (
@@ -1051,14 +1053,14 @@ export default function CampaignCategoriesPage() {
                 </button>
                 <button
                   onClick={() => handleEditCategory(category)}
-                  className="p-2 rounded-md transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
                   title="Edit"
                 >
                   <Edit className="w-4 h-4 text-gray-600" />
                 </button>
                 <button
                   onClick={() => handleDeleteCategory(category)}
-                  className="p-2 rounded-md transition-colors"
+                  className="p-2 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete"
                 >
                   <Trash2 className="w-4 h-4 text-red-600" />

@@ -379,7 +379,7 @@ export default function ProgramsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate("/dashboard/configuration")}
             className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
@@ -497,9 +497,9 @@ export default function ProgramsPage() {
           </div>
         ) : (
           <>
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="overflow-x-auto">
               <table
-                className="w-full"
+                className="w-full min-w-[720px]"
                 style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
               >
                 <thead style={{ background: color.surface.tableHeader }}>
@@ -601,67 +601,6 @@ export default function ProgramsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-
-            <div className="lg:hidden">
-              {filteredPrograms.map((program) => (
-                <div
-                  key={program.id}
-                  className="p-4 mb-3 last:mb-0 rounded-md"
-                  style={{ backgroundColor: color.surface.tablebodybg }}
-                >
-                  <div className="flex flex-col space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div
-                          className={`text-base font-semibold ${tw.textPrimary} mb-1`}
-                        >
-                          {program.name}
-                        </div>
-                        <div className={`text-xs ${tw.textMuted} mb-2`}>
-                          ID: {program.id ?? "—"}
-                        </div>
-                        <div className={`text-sm ${tw.textSecondary} mb-2`}>
-                          {program.description || "No description"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={`text-sm ${tw.textPrimary}`}>
-                      Status: {program.is_active ? "Active" : "Inactive"}
-                    </div>
-
-                    <div className="flex items-center justify-end space-x-2 pt-2 border-t">
-                      <button
-                        onClick={() => handleEditProgram(program)}
-                        className="p-2 rounded-md transition-colors"
-                        style={{
-                          color: color.primary.action,
-                          backgroundColor: "transparent",
-                        }}
-                        onMouseEnter={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = `${color.primary.action}10`;
-                        }}
-                        onMouseLeave={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProgram(program)}
-                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </>
         )}

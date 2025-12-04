@@ -918,7 +918,7 @@ export default function ProductCatalogsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate("/dashboard/products")}
             className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors flex items-center gap-2"
@@ -1310,64 +1310,66 @@ export default function ProductCatalogsPage() {
           {filteredCatalogs.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all"
             >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-gray-900">
-                    {category.name}
-                  </h3>
-                  <div className="text-sm text-gray-600 mt-0.5">
-                    <div className="font-medium">
-                      {categoryProductCounts[String(category.id)]
-                        ?.total_products || 0}{" "}
-                      products
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {category.name}
+                    </h3>
+                    <div className="text-sm text-gray-600 mt-0.5">
+                      <div className="font-medium">
+                        {categoryProductCounts[String(category.id)]
+                          ?.total_products || 0}{" "}
+                        products
+                      </div>
                     </div>
+                    {(() => {
+                      const performance = categoryPerformance[category.id];
+                      if (
+                        performance &&
+                        (performance.totalValue > 0 ||
+                          performance.averagePrice > 0)
+                      ) {
+                        return (
+                          <div className="flex items-center gap-4 mt-2">
+                            <div>
+                              <span className="text-xs text-gray-500">
+                                Total Value:{" "}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                <CurrencyFormatter
+                                  amount={performance.totalValue}
+                                />
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-500">
+                                Avg Price:{" "}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-900">
+                                <CurrencyFormatter
+                                  amount={performance.averagePrice}
+                                />
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
-                  {(() => {
-                    const performance = categoryPerformance[category.id];
-                    if (
-                      performance &&
-                      (performance.totalValue > 0 ||
-                        performance.averagePrice > 0)
-                    ) {
-                      return (
-                        <div className="flex items-center gap-4 mt-2">
-                          <div>
-                            <span className="text-xs text-gray-500">
-                              Total Value:{" "}
-                            </span>
-                            <span className="text-sm font-semibold text-gray-900">
-                              <CurrencyFormatter
-                                amount={performance.totalValue}
-                              />
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-500">
-                              Avg Price:{" "}
-                            </span>
-                            <span className="text-sm font-semibold text-gray-900">
-                              <CurrencyFormatter
-                                amount={performance.averagePrice}
-                              />
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                  <button
+                    onClick={() => handleViewProducts(category)}
+                    className={tw.borderedButton}
+                    title="View & Assign Products"
+                  >
+                    View Products
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleViewProducts(category)}
-                  className={tw.borderedButton}
-                  title="View & Assign Products"
-                >
-                  View Products
-                </button>
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
                 <button
                   onClick={() => handleToggleActive(category)}
                   disabled={togglingCategoryId === category.id}

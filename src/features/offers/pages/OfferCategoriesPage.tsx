@@ -1003,7 +1003,7 @@ function OfferCategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate("/dashboard/offers")}
             className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
@@ -1489,16 +1489,16 @@ function OfferCategoriesPage() {
                           </div>
                         )}
                     </div>
+                    <button
+                      onClick={() => handleViewOffers(category)}
+                      className="text-sm font-medium text-gray-700 hover:underline transition-colors"
+                      title="View & Assign Offers"
+                    >
+                      View Offers
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleViewOffers(category)}
-                    className="text-sm font-medium text-gray-700 hover:underline transition-colors"
-                    title="View & Assign Offers"
-                  >
-                    View Offers
-                  </button>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
                   {/* <button
                   onClick={() => handleViewDetails(category)}
                   className="p-2 hover:bg-gray-100 rounded-md transition-colors"

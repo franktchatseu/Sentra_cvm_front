@@ -938,30 +938,32 @@ export default function SegmentCategoriesPage() {
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all flex items-center justify-between"
+              className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all"
             >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="flex-1">
-                  <h3 className={`${tw.cardHeading} text-gray-900`}>
-                    {category.name}
-                  </h3>
-                  <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
-                    {segmentCounts[category.id] || 0} segment
-                    {segmentCounts[category.id] !== 1 ? "s" : ""}
-                  </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="flex-1">
+                    <h3 className={`${tw.cardHeading} text-gray-900`}>
+                      {category.name}
+                    </h3>
+                    <p className={`${tw.cardSubHeading} text-gray-600 mt-0.5`}>
+                      {segmentCounts[category.id] || 0} segment
+                      {segmentCounts[category.id] !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(category);
+                      setIsSegmentsModalOpen(true);
+                    }}
+                    className="text-sm font-medium text-gray-700 hover:underline transition-colors"
+                    title="View Segments"
+                  >
+                    View Segments
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    setIsSegmentsModalOpen(true);
-                  }}
-                  className="text-sm font-medium text-gray-700 hover:underline transition-colors"
-                  title="View Segments"
-                >
-                  View Segments
-                </button>
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
                 <button
                   onClick={() => handleToggleActive(category)}
                   disabled={togglingCategoryId === category.id}

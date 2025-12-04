@@ -200,7 +200,7 @@ export default function ConnectionProfileFormPage({
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
+          <div className="ml-2 sm:ml-4">
             <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
               {mode === "create"
                 ? "Create Connection Profile"

@@ -153,7 +153,7 @@ export function ConfigurationModal({
 
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10050] p-4">
-      <div className="bg-white rounded-md shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-md shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">
             {item ? config.modalTitle.edit : config.modalTitle.create}
@@ -378,8 +378,8 @@ export default function GenericConfigurationPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate(config.backPath)}
             className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
@@ -387,7 +387,7 @@ export default function GenericConfigurationPage({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+            <h1 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>
               {config.title}
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
@@ -395,10 +395,10 @@ export default function GenericConfigurationPage({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-auto">
           <button
             onClick={handleCreateItem}
-            className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm text-white"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm text-white w-auto"
             style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />

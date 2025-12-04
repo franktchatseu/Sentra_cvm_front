@@ -150,7 +150,7 @@ export default function EditSegmentPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={handleCancel}
             className={`p-2 rounded-md ${tw.textMuted} hover:bg-gray-100 transition-colors`}

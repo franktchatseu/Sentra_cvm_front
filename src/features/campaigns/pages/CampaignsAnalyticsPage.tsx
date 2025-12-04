@@ -467,7 +467,7 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <button
           onClick={() => navigate("/dashboard/campaigns")}
           className="rounded-md p-2 text-gray-600 hover:text-gray-800 transition-colors self-start"
@@ -475,7 +475,7 @@ export default function CampaignsAnalyticsPage(): JSX.Element {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div>
+        <div className="sm:ml-2">
           <h1 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>
             Campaign Analytics
           </h1>

@@ -197,8 +197,8 @@ export default function CommunicationPolicyPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate("/dashboard/configuration")}
             className={`p-2 ${tw.textSecondary} rounded-md transition-colors`}
@@ -206,7 +206,7 @@ export default function CommunicationPolicyPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`${tw.mainHeading} ${tw.textPrimary}`}>
+            <h1 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>
               Communication Policies
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>
@@ -214,10 +214,11 @@ export default function CommunicationPolicyPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-auto">
           <button
             onClick={handleCreatePolicy}
-            className={`${tw.button} flex items-center gap-2`}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm text-white w-auto"
+            style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
             Create Policy
@@ -275,9 +276,9 @@ export default function CommunicationPolicyPage() {
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="overflow-x-auto">
               <table
-                className="w-full"
+                className="w-full min-w-[720px]"
                 style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
               >
                 <thead style={{ background: color.surface.tableHeader }}>
@@ -395,8 +396,8 @@ export default function CommunicationPolicyPage() {
               </table>
             </div>
 
-            {/* Mobile Card View */}
-            <div className="lg:hidden">
+            {/* Mobile Card View - Keep for very small screens if needed */}
+            <div className="hidden">
               {filteredPolicies.map((policy) => (
                 <div
                   key={policy.id}

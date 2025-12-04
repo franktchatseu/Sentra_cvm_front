@@ -552,8 +552,8 @@ export default function TypeConfigurationPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate(config.backPath)}
             className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
@@ -562,7 +562,7 @@ export default function TypeConfigurationPage({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+            <h1 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>
               {config.title}
             </h1>
             <p className={`${tw.textSecondary} mt-2 text-sm`}>

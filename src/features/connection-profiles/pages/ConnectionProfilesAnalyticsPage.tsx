@@ -209,7 +209,7 @@ export default function ConnectionProfilesAnalyticsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-4">
         <button
           onClick={() => navigate("/dashboard/connection-profiles")}
           className="rounded-md p-2 text-gray-600 hover:text-gray-800 transition-colors"

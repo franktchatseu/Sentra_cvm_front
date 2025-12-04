@@ -147,8 +147,8 @@ export default function ControlGroupsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate("/dashboard/configuration")}
             className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
@@ -156,22 +156,24 @@ export default function ControlGroupsPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               Universal Control Groups
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 mt-1 text-sm">
               Configure and manage universal control groups for campaigns
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className={`inline-flex items-center px-4 py-2 ${tw.primaryAction} rounded-md text-sm font-medium transition-colors hover:opacity-90`}
-          style={{ backgroundColor: color.primary.action }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          <span>Create Control Group</span>
-        </button>
+        <div className="flex items-center gap-3 w-auto">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-white transition-colors hover:opacity-90 w-auto"
+            style={{ backgroundColor: color.primary.action }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span>Create Control Group</span>
+          </button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -277,9 +279,9 @@ export default function ControlGroupsPage() {
         className={` rounded-md border border-[${color.border.default}] overflow-hidden`}
       >
         {filteredGroups.length > 0 ? (
-          <div className="hidden lg:block overflow-x-auto">
+          <div className="overflow-x-auto">
             <table
-              className="w-full"
+              className="w-full min-w-[720px]"
               style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
             >
               <thead style={{ background: color.surface.tableHeader }}>

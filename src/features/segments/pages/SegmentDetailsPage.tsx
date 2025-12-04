@@ -417,7 +417,7 @@ export default function SegmentDetailsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={handleBack}
             className="p-2 rounded-md transition-colors"
