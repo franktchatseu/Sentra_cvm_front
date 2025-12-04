@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+  useLocation,
+} from "react-router-dom";
 import { ArrowLeft, Target, Users, Gift, Calendar, Eye } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -110,6 +115,7 @@ const steps: Step[] = [
 
 export default function CreateCampaignPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
@@ -157,41 +163,51 @@ export default function CreateCampaignPage() {
   }>({});
 
   const loadCampaignData = useCallback(
-    async (campaignId: string, isDuplicate: boolean = false) => {
+    async (
+      campaignId: string,
+      isDuplicate: boolean = false,
+      skipFormData: boolean = false,
+      silent: boolean = false
+    ) => {
       if (!campaignId) return;
 
-      setIsLoadingCampaign(true);
+      if (!silent) {
+        setIsLoadingCampaign(true);
+      }
       try {
         const response = await campaignService.getCampaignById(campaignId);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const campaign = (response as { data?: any } | any).data || response;
 
-        // Set form data with all available fields
-        // If duplicating, prefix name with "Copy of "
-        const newFormData: CampaignFormData = {
-          name: isDuplicate
-            ? `Copy of ${campaign?.name}`
-            : campaign?.name || "",
-          description: campaign?.description || "",
-          objective: campaign?.objective || "acquisition",
-          category_id: campaign?.category_id || undefined,
-          program_id: campaign?.program_id || undefined,
-          start_date: campaign?.start_date || undefined,
-          end_date: campaign?.end_date || undefined,
-          campaign_type: campaign?.campaign_type || "multiple_target_group",
-          // Load tags as array
-          tags: campaign?.tags || [],
-          // Load department_id if owner_team matches a department name
-          department_id: campaign?.owner_team ? undefined : undefined, // Will be set in UI selection
-          // Load budget_allocated - convert string to number for the form
-          budget_allocated: campaign?.budget_allocated
-            ? parseFloat(campaign.budget_allocated)
-            : undefined,
-          // Load priority fields
-          priority: campaign?.priority || undefined,
-          priority_rank: campaign?.priority_rank || undefined,
-        };
-        setFormData(newFormData);
+        // Only set form data if not already populated from state
+        if (!skipFormData) {
+          // Set form data with all available fields
+          // If duplicating, prefix name with "Copy of "
+          const newFormData: CampaignFormData = {
+            name: isDuplicate
+              ? `Copy of ${campaign?.name}`
+              : campaign?.name || "",
+            description: campaign?.description || "",
+            objective: campaign?.objective || "acquisition",
+            category_id: campaign?.category_id || undefined,
+            program_id: campaign?.program_id || undefined,
+            start_date: campaign?.start_date || undefined,
+            end_date: campaign?.end_date || undefined,
+            campaign_type: campaign?.campaign_type || "multiple_target_group",
+            // Load tags as array
+            tags: campaign?.tags || [],
+            // Load department_id if owner_team matches a department name
+            department_id: campaign?.owner_team ? undefined : undefined, // Will be set in UI selection
+            // Load budget_allocated - convert string to number for the form
+            budget_allocated: campaign?.budget_allocated
+              ? parseFloat(campaign.budget_allocated)
+              : undefined,
+            // Load priority fields
+            priority: campaign?.priority || undefined,
+            priority_rank: campaign?.priority_rank || undefined,
+          };
+          setFormData(newFormData);
+        }
 
         // Load segments and offers via mappings
         try {
@@ -307,10 +323,14 @@ export default function CreateCampaignPage() {
           console.error("Failed to load segment-offer mappings:", mappingError);
         }
       } catch {
-        showToast("error", "Failed to load campaign data");
-        navigate("/dashboard/campaigns");
+        if (!silent) {
+          showToast("error", "Failed to load campaign data");
+          navigate("/dashboard/campaigns");
+        }
       } finally {
-        setIsLoadingCampaign(false);
+        if (!silent) {
+          setIsLoadingCampaign(false);
+        }
       }
     },
     [showToast, navigate]
@@ -421,7 +441,43 @@ export default function CreateCampaignPage() {
       // Edit mode - modifying existing campaign
       setIsEditMode(true);
       setIsDuplicateMode(false);
-      loadCampaignData(id, false);
+
+      // Check if campaign data is passed via location.state (from details page)
+      const campaignFromState = (location.state as { campaign?: any })
+        ?.campaign;
+      if (campaignFromState) {
+        // Use passed data to populate form immediately
+        hasRestoredDataRef.current = true;
+        const campaign = campaignFromState;
+
+        const newFormData: CampaignFormData = {
+          name: campaign?.name || "",
+          description: campaign?.description || "",
+          objective: campaign?.objective || "acquisition",
+          category_id: campaign?.category_id || undefined,
+          program_id: campaign?.program_id || undefined,
+          start_date: campaign?.start_date || undefined,
+          end_date: campaign?.end_date || undefined,
+          campaign_type: campaign?.campaign_type || "multiple_target_group",
+          tags: campaign?.tags || [],
+          department_id: campaign?.owner_team ? undefined : undefined,
+          budget_allocated: campaign?.budget_allocated
+            ? parseFloat(campaign.budget_allocated)
+            : undefined,
+          priority: campaign?.priority || undefined,
+          priority_rank: campaign?.priority_rank || undefined,
+        };
+        setFormData(newFormData);
+
+        // Load segments and offers in background silently (don't show loading spinner)
+        // Skip form data since we already populated it from state
+        loadCampaignData(id, false, true, true).catch(() => {
+          // Silently fail - segments/offers will just be empty
+        });
+      } else {
+        // No data passed, load from API
+        loadCampaignData(id, false);
+      }
     } else if (duplicateIdParam && !hasRestoredDataRef.current) {
       // Duplicate mode - creating new campaign from existing one
       setIsEditMode(false);
@@ -434,7 +490,7 @@ export default function CreateCampaignPage() {
     loadCampaignData,
     searchParams,
     setSearchParams,
-    formData,
+    location.state,
   ]);
 
   // Validation function for each step - returns validation errors

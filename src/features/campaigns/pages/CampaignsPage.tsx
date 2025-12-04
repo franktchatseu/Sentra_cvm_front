@@ -1224,7 +1224,12 @@ export default function CampaignsPage() {
                         ) : null}
                         <button
                           onClick={() =>
-                            navigate(`/dashboard/campaigns/${campaign.id}/edit`)
+                            navigate(
+                              `/dashboard/campaigns/${campaign.id}/edit`,
+                              {
+                                state: { campaign: campaign },
+                              }
+                            )
                           }
                           className={`group p-3 rounded-md ${tw.textMuted} hover:bg-gray-100 transition-all duration-300`}
                           title="Edit"
@@ -1478,7 +1483,8 @@ export default function CampaignsPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(
-                              `/dashboard/campaigns/${campaign.id}/edit`
+                              `/dashboard/campaigns/${campaign.id}/edit`,
+                              { state: { campaign: campaign } }
                             );
                             setShowActionMenu(null);
                           }}

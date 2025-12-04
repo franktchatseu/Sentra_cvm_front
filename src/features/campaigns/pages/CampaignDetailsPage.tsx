@@ -629,7 +629,11 @@ export default function CampaignDetailsPage() {
 
           {/* Edit Button - Always Visible */}
           <button
-            onClick={() => navigate(`/dashboard/campaigns/${id}/edit`)}
+            onClick={() =>
+              navigate(`/dashboard/campaigns/${id}/edit`, {
+                state: { campaign: campaign },
+              })
+            }
             className="px-4 py-2 text-white rounded-md font-semibold flex items-center gap-2 text-sm"
             style={{ backgroundColor: color.primary.action }}
           >
