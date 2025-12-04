@@ -164,28 +164,28 @@ export default function CreateCommunicationModal({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
         <div className="bg-white rounded-md shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+              <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
                 {isSuccess ? (
-                  <CheckCircle className="w-12 h-12 text-green-600" />
+                  <CheckCircle className="w-8 h-8 sm:w-12 sm:h-12 text-green-600 flex-shrink-0" />
                 ) : (
-                  <XCircle className="w-12 h-12 text-red-600" />
+                  <XCircle className="w-8 h-8 sm:w-12 sm:h-12 text-red-600 flex-shrink-0" />
                 )}
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                     {isSuccess
                       ? "Communication Sent Successfully!"
                       : "Communication Completed with Errors"}
                   </h2>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1 break-all">
                     Execution ID: {result.execution_id}
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
-                className="p-2 hover:bg-white rounded-md transition-colors"
+                className="p-2 hover:bg-white rounded-md transition-colors flex-shrink-0"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -193,8 +193,8 @@ export default function CreateCommunicationModal({
           </div>
 
           {/* Stats */}
-          <div className="flex-1 overflow-auto p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="flex-1 overflow-auto p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div className="bg-gray-50 rounded-md p-4">
                 <p className="text-xs text-gray-500 font-medium mb-1">
                   Total Recipients
@@ -237,7 +237,7 @@ export default function CreateCommunicationModal({
               {result.channel_summaries.map((summary) => (
                 <div
                   key={summary.channel}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 p-3 bg-gray-50 rounded-md"
                 >
                   <span className="text-sm font-medium text-gray-700">
                     {summary.channel}
@@ -256,16 +256,16 @@ export default function CreateCommunicationModal({
           </div>
 
           {/* Actions */}
-          <div className="p-6 border-t border-gray-200 flex items-center justify-end space-x-3">
+          <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
             <button
               onClick={handleClose}
-              className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
             >
               Close
             </button>
             <button
               onClick={() => setResult(null)}
-              className="px-6 py-2 text-sm font-medium text-white rounded-md transition-colors"
+              className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white rounded-md transition-colors"
               style={{ backgroundColor: color.primary.action }}
             >
               Send Another
@@ -282,14 +282,14 @@ export default function CreateCommunicationModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-md shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
               Send Communication
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
               Sending to:{" "}
-              <span className="font-semibold text-gray-700">
+              <span className="font-semibold text-gray-700 break-words">
                 {quicklist.name}
               </span>{" "}
               ({quicklist.row_count || 0} recipients)
@@ -298,7 +298,7 @@ export default function CreateCommunicationModal({
           <button
             onClick={handleClose}
             disabled={sending}
-            className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50"
+            className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 self-start sm:self-auto flex-shrink-0"
           >
             <X className="w-5 h-5 text-gray-600" />
           </button>
@@ -310,8 +310,8 @@ export default function CreateCommunicationModal({
             <LoadingSpinner variant="modern" size="lg" color="primary" />
           </div>
         ) : (
-          <div className="flex-1 overflow-auto p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <div className="flex-1 overflow-auto p-4 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
               {/* Left Column - Form */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Channel Selection */}
@@ -362,7 +362,7 @@ export default function CreateCommunicationModal({
 
               {/* Right Column - Preview */}
               <div className="lg:col-span-1">
-                <div className="sticky top-0">
+                <div className="lg:sticky lg:top-0">
                   <PreviewPanel
                     channel={selectedChannel}
                     title={messageTitle}
@@ -376,18 +376,18 @@ export default function CreateCommunicationModal({
         )}
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 flex items-center justify-end space-x-3">
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
           <button
             onClick={handleClose}
             disabled={sending}
-            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSend}
             disabled={sending || !messageBody.trim()}
-            className="px-8 py-2.5 text-sm font-semibold text-white rounded-md transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-6 sm:px-8 py-2.5 text-sm font-semibold text-white rounded-md transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: color.primary.action }}
           >
             {sending ? (
@@ -398,7 +398,10 @@ export default function CreateCommunicationModal({
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                <span>Send Now to {quicklist.row_count || 0} Recipients</span>
+                <span className="hidden sm:inline">
+                  Send Now to {quicklist.row_count || 0} Recipients
+                </span>
+                <span className="sm:hidden">Send Now</span>
               </>
             )}
           </button>

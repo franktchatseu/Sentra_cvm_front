@@ -82,15 +82,23 @@ export default function ScheduleStep({
   };
 
   return (
-    <div className="bg-white rounded-md shadow-sm border" style={{ borderColor: color.border.default }}>
-      <div className="p-6 border-b" style={{ borderColor: color.border.default }}>
-        <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>Schedule Broadcast</h2>
-        <p className={`text-sm ${tw.textSecondary} mt-1`}>
+    <div
+      className="bg-white rounded-md shadow-sm border"
+      style={{ borderColor: color.border.default }}
+    >
+      <div
+        className="p-4 sm:p-6 border-b"
+        style={{ borderColor: color.border.default }}
+      >
+        <h2 className={`text-lg sm:text-xl font-semibold ${tw.textPrimary}`}>
+          Schedule Broadcast
+        </h2>
+        <p className={`text-xs sm:text-sm ${tw.textSecondary} mt-1`}>
           Choose when to launch your broadcast
         </p>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Schedule Type Selection */}
         <div>
           <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>
@@ -102,7 +110,7 @@ export default function ScheduleStep({
               type="button"
               onClick={() => setScheduleType("now")}
               disabled={isSubmitting}
-              className="flex items-start gap-4 p-4 rounded-md border-2 transition-all text-left"
+              className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-md border-2 transition-all text-left"
               style={{
                 borderColor:
                   scheduleType === "now"
@@ -117,7 +125,7 @@ export default function ScheduleStep({
               }}
             >
               <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{
                   backgroundColor:
                     scheduleType === "now"
@@ -126,22 +134,24 @@ export default function ScheduleStep({
                 }}
               >
                 <Send
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   style={{
                     color:
                       scheduleType === "now" ? "white" : color.text.secondary,
                   }}
                 />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p
-                  className={`text-base font-semibold ${
+                  className={`text-sm sm:text-base font-semibold whitespace-nowrap ${
                     scheduleType === "now" ? tw.textPrimary : tw.textSecondary
                   }`}
                 >
                   Send Now
                 </p>
-                <p className={`text-sm ${tw.textMuted} mt-1`}>
+                <p
+                  className={`text-xs sm:text-sm ${tw.textMuted} mt-1 break-words`}
+                >
                   Send the broadcast immediately to all recipients
                 </p>
               </div>
@@ -158,7 +168,7 @@ export default function ScheduleStep({
               type="button"
               onClick={() => setScheduleType("later")}
               disabled={isSubmitting}
-              className="flex items-start gap-4 p-4 rounded-md border-2 transition-all text-left"
+              className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-md border-2 transition-all text-left"
               style={{
                 borderColor:
                   scheduleType === "later"
@@ -173,7 +183,7 @@ export default function ScheduleStep({
               }}
             >
               <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{
                   backgroundColor:
                     scheduleType === "later"
@@ -182,26 +192,24 @@ export default function ScheduleStep({
                 }}
               >
                 <Calendar
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   style={{
                     color:
-                      scheduleType === "later"
-                        ? "white"
-                        : color.text.secondary,
+                      scheduleType === "later" ? "white" : color.text.secondary,
                   }}
                 />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p
-                  className={`text-base font-semibold ${
-                    scheduleType === "later"
-                      ? tw.textPrimary
-                      : tw.textSecondary
+                  className={`text-sm sm:text-base font-semibold whitespace-nowrap ${
+                    scheduleType === "later" ? tw.textPrimary : tw.textSecondary
                   }`}
                 >
                   Schedule for Later
                 </p>
-                <p className={`text-sm ${tw.textMuted} mt-1`}>
+                <p
+                  className={`text-xs sm:text-sm ${tw.textMuted} mt-1 break-words`}
+                >
                   Choose a specific date and time for sending
                 </p>
               </div>
@@ -219,7 +227,9 @@ export default function ScheduleStep({
         {scheduleType === "later" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 Date *
               </label>
               <div className="relative">
@@ -243,7 +253,9 @@ export default function ScheduleStep({
             </div>
 
             <div>
-              <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 Time *
               </label>
               <div className="relative">
@@ -270,41 +282,43 @@ export default function ScheduleStep({
 
         {/* Summary */}
         <div
-          className="p-4 rounded-md"
+          className="p-3 sm:p-4 rounded-md"
           style={{ backgroundColor: `${color.primary.accent}10` }}
         >
           <h3
-            className="text-sm font-semibold mb-3"
+            className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
             style={{ color: color.primary.accent }}
           >
             Broadcast Summary
           </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
+          <div className="space-y-2 text-xs sm:text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
               <span className={tw.textSecondary}>Audience:</span>
-              <span className={`font-medium ${tw.textPrimary}`}>
+              <span className={`font-medium ${tw.textPrimary} break-words`}>
                 {data.audienceName || "N/A"}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
               <span className={tw.textSecondary}>Recipients:</span>
               <span className={`font-medium ${tw.textPrimary}`}>
                 {data.rowCount || 0}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
               <span className={tw.textSecondary}>Channel:</span>
               <span className={`font-medium ${tw.textPrimary}`}>
                 {data.channel || "N/A"}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
               <span className={tw.textSecondary}>Schedule:</span>
-              <span className={`font-medium ${tw.textPrimary}`}>
+              <span className={`font-medium ${tw.textPrimary} break-words`}>
                 {scheduleType === "now"
                   ? "Send immediately"
                   : scheduleDate && scheduleTime
-                  ? `${new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString()}`
+                  ? `${new Date(
+                      `${scheduleDate}T${scheduleTime}`
+                    ).toLocaleString()}`
                   : "Not set"}
               </span>
             </div>
@@ -342,14 +356,17 @@ export default function ScheduleStep({
             className="w-5 h-5 flex-shrink-0 mt-0.5"
             style={{ color: color.status.warning }}
           />
-          <div className="flex-1">
-            <p className="text-sm font-medium" style={{ color: color.status.warning }}>
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-xs sm:text-sm font-medium"
+              style={{ color: color.status.warning }}
+            >
               Ready to launch?
             </p>
-            <p className={`text-xs ${tw.textMuted} mt-1`}>
+            <p className={`text-xs ${tw.textMuted} mt-1 break-words`}>
               Once you click "Launch Broadcast", the message will be{" "}
-              {scheduleType === "now" ? "sent immediately" : "scheduled"} and cannot be
-              cancelled. Please review all details carefully.
+              {scheduleType === "now" ? "sent immediately" : "scheduled"} and
+              cannot be cancelled. Please review all details carefully.
             </p>
           </div>
         </div>
@@ -357,13 +374,13 @@ export default function ScheduleStep({
 
       {/* Footer */}
       <div
-        className="p-6 border-t flex items-center justify-between"
+        className="p-4 sm:p-6 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
         style={{ borderColor: color.border.default }}
       >
         <button
           onClick={onPrevious}
           disabled={isSubmitting}
-          className="px-6 py-2.5 rounded-md transition-all text-sm font-semibold disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2.5 rounded-md transition-all text-sm font-semibold disabled:opacity-50 whitespace-nowrap"
           style={{
             backgroundColor: color.surface.cards,
             border: `1px solid ${color.border.default}`,
@@ -378,18 +395,18 @@ export default function ScheduleStep({
             isSubmitting ||
             (scheduleType === "later" && (!scheduleDate || !scheduleTime))
           }
-          className="px-8 py-2.5 text-white rounded-md transition-all text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-6 sm:px-8 py-2.5 text-white rounded-md transition-all text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           style={{ backgroundColor: color.primary.action }}
         >
           {isSubmitting ? (
             <>
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Creating...
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              <span>Creating...</span>
             </>
           ) : (
             <>
-              <Send className="w-4 h-4" />
-              Launch Broadcast
+              <Send className="w-4 h-4 flex-shrink-0" />
+              <span>Launch Broadcast</span>
             </>
           )}
         </button>

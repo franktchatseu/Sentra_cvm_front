@@ -397,12 +397,12 @@ export default function TargetAudienceStep({
           <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>
             Input Method *
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
               onClick={() => setInputMode("file")}
               disabled={isSubmitting}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
+              className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all whitespace-nowrap"
               style={{
                 borderColor:
                   inputMode === "file"
@@ -415,14 +415,16 @@ export default function TargetAudienceStep({
                 cursor: isSubmitting ? "not-allowed" : "pointer",
               }}
             >
-              <Upload className="w-5 h-5" />
-              <span className="text-sm font-medium">Upload File</span>
+              <Upload className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm font-medium whitespace-nowrap">
+                Upload File
+              </span>
             </button>
             <button
               type="button"
               onClick={() => setInputMode("manual")}
               disabled={isSubmitting}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all"
+              className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 transition-all whitespace-nowrap"
               style={{
                 borderColor:
                   inputMode === "manual"
@@ -435,8 +437,10 @@ export default function TargetAudienceStep({
                 cursor: isSubmitting ? "not-allowed" : "pointer",
               }}
             >
-              <Edit3 className="w-5 h-5" />
-              <span className="text-sm font-medium">Manual Entry</span>
+              <Edit3 className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm font-medium whitespace-nowrap">
+                Manual Entry
+              </span>
             </button>
           </div>
         </div>
@@ -648,7 +652,7 @@ export default function TargetAudienceStep({
             (inputMode === "file" && !file) ||
             (inputMode === "manual" && manualInputValidation.validCount === 0)
           }
-          className="px-6 py-2.5 text-white rounded-md transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 text-white rounded-md transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           style={{ backgroundColor: color.primary.action }}
         >
           {isSubmitting ? "Creating Audience..." : "Next: Define Communication"}

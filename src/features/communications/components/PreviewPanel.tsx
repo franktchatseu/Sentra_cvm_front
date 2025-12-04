@@ -67,28 +67,30 @@ export default function PreviewPanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center space-x-2 text-gray-700">
-        <Eye className="w-5 h-5" />
-        <h3 className="text-sm font-semibold">Message Preview</h3>
+        <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+        <h3 className="text-xs sm:text-sm font-semibold">Message Preview</h3>
       </div>
 
       <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
         {/* Header */}
         <div
-          className={`px-4 py-3 border-b flex items-center space-x-2 ${getChannelColor()}`}
+          className={`px-3 sm:px-4 py-2 sm:py-3 border-b flex items-center space-x-2 ${getChannelColor()}`}
           style={getChannelStyle()}
         >
           {getChannelIcon()}
-          <span className="text-sm font-semibold">
+          <span className="text-xs sm:text-sm font-semibold">
             {channel === "EMAIL" ? "Email Message" : `${channel} Message`}
           </span>
         </div>
 
         {/* Content */}
-        <div className="p-4 space-y-3">
+        <div className="p-3 sm:p-4 space-y-3">
           {previewTitle && (
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-1">SUBJECT</p>
-              <p className="text-base font-semibold text-gray-900">
+              <p className="text-[10px] sm:text-xs text-gray-500 font-medium mb-1">
+                SUBJECT
+              </p>
+              <p className="text-sm sm:text-base font-semibold text-gray-900 break-words">
                 {previewTitle}
               </p>
             </div>
@@ -96,9 +98,11 @@ export default function PreviewPanel({
 
           <div>
             {previewTitle && (
-              <p className="text-xs text-gray-500 font-medium mb-1">MESSAGE</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-medium mb-1">
+                MESSAGE
+              </p>
             )}
-            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+            <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap leading-relaxed break-words">
               {previewBody || (
                 <span className="text-gray-400 italic">
                   Your message will appear here...
@@ -109,8 +113,8 @@ export default function PreviewPanel({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 bg-gray-50 border-t">
-          <p className="text-xs text-gray-500">
+        <div className="px-3 sm:px-4 py-2 bg-gray-50 border-t">
+          <p className="text-[10px] sm:text-xs text-gray-500 break-words">
             Preview with sample data:{" "}
             {Object.keys(sampleData).length > 0
               ? Object.keys(sampleData).join(", ")

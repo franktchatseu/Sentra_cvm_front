@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Send, Plus, X, CheckCircle, XCircle, AlertCircle, Loader } from "lucide-react";
+import {
+  Send,
+  Plus,
+  X,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Loader,
+} from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { ManualBroadcastData } from "../pages/CreateManualBroadcastPage";
 import { communicationService } from "../../communications/services/communicationService";
@@ -23,7 +31,9 @@ export default function TestBroadcastStep({
   onNext,
   onPrevious,
 }: TestBroadcastStepProps) {
-  const [testContacts, setTestContacts] = useState<string[]>(data.testContacts || []);
+  const [testContacts, setTestContacts] = useState<string[]>(
+    data.testContacts || []
+  );
   const [currentContact, setCurrentContact] = useState("");
   const [isTesting, setIsTesting] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -32,7 +42,7 @@ export default function TestBroadcastStep({
   const validateContact = (contact: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[+]?[0-9\s()-]{8,}$/;
-    
+
     if (data.channel === "EMAIL") {
       return emailRegex.test(contact);
     } else if (data.channel === "SMS" || data.channel === "WHATSAPP") {
@@ -43,7 +53,7 @@ export default function TestBroadcastStep({
 
   const handleAddContact = () => {
     const trimmedContact = currentContact.trim();
-    
+
     if (!trimmedContact) {
       setError("Please enter a contact");
       return;
@@ -92,7 +102,7 @@ export default function TestBroadcastStep({
     try {
       // Send actual test communication for each contact
       const results: TestResult[] = [];
-      
+
       for (const contact of testContacts) {
         try {
           await communicationService.sendCommunication({
@@ -125,7 +135,8 @@ export default function TestBroadcastStep({
           results.push({
             contact,
             status: "failed",
-            message: err instanceof Error ? err.message : "Failed to send message",
+            message:
+              err instanceof Error ? err.message : "Failed to send message",
           });
         }
       }
@@ -174,21 +185,31 @@ export default function TestBroadcastStep({
   };
 
   return (
-    <div className="bg-white rounded-md shadow-sm border" style={{ borderColor: color.border.default }}>
-      <div className="p-6 border-b" style={{ borderColor: color.border.default }}>
-        <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>Test Broadcast</h2>
-        <p className={`text-sm ${tw.textSecondary} mt-1`}>
+    <div
+      className="bg-white rounded-md shadow-sm border"
+      style={{ borderColor: color.border.default }}
+    >
+      <div
+        className="p-4 sm:p-6 border-b"
+        style={{ borderColor: color.border.default }}
+      >
+        <h2 className={`text-lg sm:text-xl font-semibold ${tw.textPrimary}`}>
+          Test Broadcast
+        </h2>
+        <p className={`text-xs sm:text-sm ${tw.textSecondary} mt-1`}>
           Send a test message before launching your broadcast
         </p>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Test Contact Input */}
         <div>
           <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
-            Test {getChannelLabel().charAt(0).toUpperCase() + getChannelLabel().slice(1)}
+            Test{" "}
+            {getChannelLabel().charAt(0).toUpperCase() +
+              getChannelLabel().slice(1)}
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={currentContact}
@@ -210,11 +231,11 @@ export default function TestBroadcastStep({
             <button
               onClick={handleAddContact}
               disabled={isTesting}
-              className="px-4 py-2 text-white rounded-md transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2 text-white rounded-md transition-all text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               style={{ backgroundColor: color.primary.action }}
             >
-              <Plus className="w-4 h-4" />
-              Add
+              <Plus className="w-4 h-4 flex-shrink-0" />
+              <span>Add</span>
             </button>
           </div>
           <p className={`text-xs ${tw.textSecondary} mt-1`}>
@@ -229,7 +250,9 @@ export default function TestBroadcastStep({
         {/* Test Contacts List */}
         {testContacts.length > 0 && (
           <div>
-            <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+            <label
+              className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+            >
               Test Recipients ({testContacts.length})
             </label>
             <div className="space-y-2">
@@ -254,22 +277,22 @@ export default function TestBroadcastStep({
         )}
 
         {/* Send Test Button */}
-        <div>
+        <div className="flex justify-center">
           <button
             onClick={handleSendTest}
             disabled={testContacts.length === 0 || isTesting}
-            className="w-full px-6 py-3 text-white rounded-md transition-all text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto sm:min-w-[200px] px-6 py-3 text-white rounded-md transition-all text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             style={{ backgroundColor: color.primary.accent }}
           >
             {isTesting ? (
               <>
-                <Loader className="w-5 h-5 animate-spin" />
-                Sending Test...
+                <Loader className="w-5 h-5 animate-spin flex-shrink-0" />
+                <span>Sending Test...</span>
               </>
             ) : (
               <>
-                <Send className="w-5 h-5" />
-                Send Test Broadcast
+                <Send className="w-5 h-5 flex-shrink-0" />
+                <span>Send Test Broadcast</span>
               </>
             )}
           </button>
@@ -278,7 +301,9 @@ export default function TestBroadcastStep({
         {/* Test Results */}
         {testResults.length > 0 && (
           <div>
-            <label className={`block text-sm font-medium ${tw.textPrimary} mb-3`}>
+            <label
+              className={`block text-sm font-medium ${tw.textPrimary} mb-3`}
+            >
               Test Results
             </label>
             <div className="space-y-2">
@@ -334,7 +359,10 @@ export default function TestBroadcastStep({
               className="mt-4 p-4 rounded-md"
               style={{ backgroundColor: `${color.primary.accent}10` }}
             >
-              <p className="text-sm font-medium" style={{ color: color.primary.accent }}>
+              <p
+                className="text-sm font-medium"
+                style={{ color: color.primary.accent }}
+              >
                 ✓ Test completed successfully!
               </p>
               <p className={`text-xs ${tw.textSecondary} mt-1`}>
@@ -363,18 +391,17 @@ export default function TestBroadcastStep({
             </p>
           </div>
         )}
-
       </div>
 
       {/* Footer */}
       <div
-        className="p-6 border-t flex items-center justify-between"
+        className="p-4 sm:p-6 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
         style={{ borderColor: color.border.default }}
       >
         <button
           onClick={onPrevious}
           disabled={isTesting}
-          className="px-6 py-2.5 rounded-md transition-all text-sm font-semibold disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2.5 rounded-md transition-all text-sm font-semibold disabled:opacity-50 whitespace-nowrap"
           style={{
             backgroundColor: color.surface.cards,
             border: `1px solid ${color.border.default}`,
@@ -383,11 +410,11 @@ export default function TestBroadcastStep({
         >
           Previous
         </button>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button
             onClick={handleSkipTest}
             disabled={isTesting}
-            className="px-6 py-2.5 rounded-md transition-all text-sm font-medium disabled:opacity-50"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-md transition-all text-sm font-medium disabled:opacity-50 whitespace-nowrap"
             style={{
               color: color.text.secondary,
             }}
@@ -397,7 +424,7 @@ export default function TestBroadcastStep({
           <button
             onClick={handleNext}
             disabled={isTesting}
-            className="px-6 py-2.5 text-white rounded-md transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-6 py-2.5 text-white rounded-md transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             style={{ backgroundColor: color.primary.action }}
           >
             Next: Schedule Broadcast

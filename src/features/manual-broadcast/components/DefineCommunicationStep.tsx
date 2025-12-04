@@ -65,9 +65,13 @@ export default function DefineCommunicationStep({
     if (!data.uploadType) return;
 
     try {
-      const response = await quicklistService.getUploadTypes({ activeOnly: true });
+      const response = await quicklistService.getUploadTypes({
+        activeOnly: true,
+      });
       if (response.success) {
-        const uploadType = response.data?.find((t) => t.upload_type === data.uploadType);
+        const uploadType = response.data?.find(
+          (t) => t.upload_type === data.uploadType
+        );
         if (uploadType && uploadType.expected_columns) {
           let columns: string[] = [];
           if (Array.isArray(uploadType.expected_columns)) {
@@ -121,24 +125,34 @@ export default function DefineCommunicationStep({
   };
 
   return (
-    <div className="bg-white rounded-md shadow-sm border" style={{ borderColor: color.border.default }}>
-      <div className="p-6 border-b" style={{ borderColor: color.border.default }}>
-        <h2 className={`text-xl font-semibold ${tw.textPrimary}`}>Define Communication</h2>
-        <p className={`text-sm ${tw.textSecondary} mt-1`}>
+    <div
+      className="bg-white rounded-md shadow-sm border"
+      style={{ borderColor: color.border.default }}
+    >
+      <div
+        className="p-4 sm:p-6 border-b"
+        style={{ borderColor: color.border.default }}
+      >
+        <h2 className={`text-lg sm:text-xl font-semibold ${tw.textPrimary}`}>
+          Define Communication
+        </h2>
+        <p className={`text-xs sm:text-sm ${tw.textSecondary} mt-1`}>
           Choose a channel and create your message
         </p>
       </div>
 
-      <div className="p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="p-4 sm:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Channel & Message Editor */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Channel Selection */}
             <div>
-              <label className={`block text-sm font-medium ${tw.textPrimary} mb-2`}>
+              <label
+                className={`block text-sm font-medium ${tw.textPrimary} mb-2`}
+              >
                 Communication Channel *
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2">
                 {CHANNELS.map((channel) => {
                   const Icon = channel.icon;
                   const isSelected = selectedChannel === channel.id;
@@ -174,13 +188,15 @@ export default function DefineCommunicationStep({
                       </div>
                       <div className="text-center">
                         <p
-                          className={`text-[11px] font-semibold ${
+                          className={`text-sm font-semibold ${
                             isSelected ? tw.textPrimary : tw.textSecondary
                           }`}
                         >
                           {channel.name}
                         </p>
-                        <p className={`text-[9px] ${tw.textMuted} mt-0.5`}>
+                        <p
+                          className={`text-xs ${tw.textMuted} mt-0.5 hidden sm:block`}
+                        >
                           {channel.description}
                         </p>
                       </div>
@@ -213,7 +229,7 @@ export default function DefineCommunicationStep({
 
           {/* Right Column - Preview */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6">
+            <div className="lg:sticky lg:top-6">
               <PreviewPanel
                 channel={selectedChannel}
                 title={messageTitle}
@@ -227,7 +243,7 @@ export default function DefineCommunicationStep({
         {/* Error Message */}
         {error && (
           <div
-            className="mt-6 p-3 rounded-md flex items-start space-x-2"
+            className="mt-4 sm:mt-6 p-3 rounded-md flex items-start space-x-2"
             style={{
               backgroundColor: `${color.status.danger}10`,
               border: `1px solid ${color.status.danger}30`,
@@ -246,12 +262,12 @@ export default function DefineCommunicationStep({
 
       {/* Footer */}
       <div
-        className="p-6 border-t flex items-center justify-between"
+        className="p-4 sm:p-6 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
         style={{ borderColor: color.border.default }}
       >
         <button
           onClick={onPrevious}
-          className="px-6 py-2.5 rounded-md transition-all text-sm font-semibold"
+          className="w-full sm:w-auto px-6 py-2.5 rounded-md transition-all text-sm font-semibold whitespace-nowrap"
           style={{
             backgroundColor: color.surface.cards,
             border: `1px solid ${color.border.default}`,
@@ -262,8 +278,11 @@ export default function DefineCommunicationStep({
         </button>
         <button
           onClick={handleNext}
-          disabled={!messageBody.trim() || (selectedChannel === "EMAIL" && !messageTitle.trim())}
-          className="px-6 py-2.5 text-white rounded-md transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={
+            !messageBody.trim() ||
+            (selectedChannel === "EMAIL" && !messageTitle.trim())
+          }
+          className="w-full sm:w-auto px-6 py-2.5 text-white rounded-md transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           style={{ backgroundColor: color.primary.action }}
         >
           Next: Test Broadcast

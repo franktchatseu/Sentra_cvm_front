@@ -1011,7 +1011,7 @@ export default function QuickListDetailsPage() {
               <div className="border border-gray-200 rounded-md overflow-hidden">
                 <div className="overflow-x-auto">
                   <table
-                    className="w-full text-sm"
+                    className="w-full text-sm min-w-[720px]"
                     style={{
                       borderCollapse: "separate",
                       borderSpacing: "0 6px",
@@ -1023,25 +1023,25 @@ export default function QuickListDetailsPage() {
                     >
                       <tr>
                         <th
-                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider whitespace-nowrap`}
                           style={{ color: color.surface.tableHeaderText }}
                         >
                           Row Number
                         </th>
                         <th
-                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider whitespace-nowrap`}
                           style={{ color: color.surface.tableHeaderText }}
                         >
                           Status
                         </th>
                         <th
-                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider whitespace-nowrap`}
                           style={{ color: color.surface.tableHeaderText }}
                         >
                           Error Message
                         </th>
                         <th
-                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider`}
+                          className={`px-6 py-4 text-left text-sm font-medium uppercase tracking-wider whitespace-nowrap`}
                           style={{ color: color.surface.tableHeaderText }}
                         >
                           Created
@@ -1055,13 +1055,13 @@ export default function QuickListDetailsPage() {
                           className="hover:bg-gray-50/30 transition-colors rounded"
                         >
                           <td
-                            className="px-6 py-4 text-gray-900 font-medium rounded-l"
+                            className="px-6 py-4 text-gray-900 font-medium rounded-l whitespace-nowrap"
                             style={{ backgroundColor: tableBodyBackground }}
                           >
                             {log.row_number}
                           </td>
                           <td
-                            className="px-6 py-4"
+                            className="px-6 py-4 whitespace-nowrap"
                             style={{ backgroundColor: tableBodyBackground }}
                           >
                             <span
@@ -1083,7 +1083,7 @@ export default function QuickListDetailsPage() {
                             {log.error_message || "-"}
                           </td>
                           <td
-                            className="px-6 py-4 text-gray-600 rounded-r"
+                            className="px-6 py-4 text-gray-600 rounded-r whitespace-nowrap"
                             style={{ backgroundColor: tableBodyBackground }}
                           >
                             {formatDate(log.created_at)}

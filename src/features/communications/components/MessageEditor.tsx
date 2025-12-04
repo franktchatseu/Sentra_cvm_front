@@ -69,15 +69,15 @@ export default function MessageEditor({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <label className={tw.label}>Message Content</label>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           {/* Rich Text Toggle */}
           {channel === "EMAIL" && onToggleRichText && (
             <button
               type="button"
               onClick={onToggleRichText}
-              className="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md border transition-colors"
+              className="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap"
               style={{
                 backgroundColor: isRichText
                   ? `${color.primary.accent}15`
@@ -87,25 +87,29 @@ export default function MessageEditor({
               }}
             >
               {isRichText ? (
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
               ) : (
-                <AlignLeft className="w-4 h-4" />
+                <AlignLeft className="w-4 h-4 flex-shrink-0" />
               )}
-              <span>{isRichText ? "Rich Text" : "Plain Text"}</span>
+              <span className="hidden sm:inline">
+                {isRichText ? "Rich Text" : "Plain Text"}
+              </span>
+              <span className="sm:hidden">{isRichText ? "Rich" : "Plain"}</span>
             </button>
           )}
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowVariables(!showVariables)}
-              className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
             >
-              <Type className="w-4 h-4" />
-              <span>Insert Variable</span>
-              <ChevronDown className="w-4 h-4" />
+              <Type className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Insert Variable</span>
+              <span className="sm:hidden">Variables</span>
+              <ChevronDown className="w-4 h-4 flex-shrink-0" />
             </button>
             {showVariables && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-10 overflow-hidden">
+              <div className="absolute right-0 sm:right-0 left-0 sm:left-auto top-full mt-2 w-full sm:w-56 bg-white border border-gray-200 rounded-md shadow-lg z-10 overflow-hidden">
                 <div className="p-2 bg-gray-50 border-b border-gray-200">
                   <p className="text-xs font-medium text-gray-600 uppercase">
                     Available Variables
