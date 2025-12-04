@@ -93,7 +93,7 @@ export default function ScheduleStep({
         <h2 className={`text-lg sm:text-xl font-semibold ${tw.textPrimary}`}>
           Schedule Broadcast
         </h2>
-        <p className={`text-xs sm:text-sm ${tw.textSecondary} mt-1`}>
+        <p className={`text-sm ${tw.textSecondary} mt-1`}>
           Choose when to launch your broadcast
         </p>
       </div>
@@ -149,9 +149,7 @@ export default function ScheduleStep({
                 >
                   Send Now
                 </p>
-                <p
-                  className={`text-xs sm:text-sm ${tw.textMuted} mt-1 break-words`}
-                >
+                <p className={`text-sm ${tw.textMuted} mt-1 break-words`}>
                   Send the broadcast immediately to all recipients
                 </p>
               </div>
@@ -207,9 +205,7 @@ export default function ScheduleStep({
                 >
                   Schedule for Later
                 </p>
-                <p
-                  className={`text-xs sm:text-sm ${tw.textMuted} mt-1 break-words`}
-                >
+                <p className={`text-sm ${tw.textMuted} mt-1 break-words`}>
                   Choose a specific date and time for sending
                 </p>
               </div>
@@ -286,12 +282,12 @@ export default function ScheduleStep({
           style={{ backgroundColor: `${color.primary.accent}10` }}
         >
           <h3
-            className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3"
+            className="text-sm font-semibold mb-2 sm:mb-3"
             style={{ color: color.primary.accent }}
           >
             Broadcast Summary
           </h3>
-          <div className="space-y-2 text-xs sm:text-sm">
+          <div className="space-y-2 text-sm">
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
               <span className={tw.textSecondary}>Audience:</span>
               <span className={`font-medium ${tw.textPrimary} break-words`}>
@@ -358,12 +354,12 @@ export default function ScheduleStep({
           />
           <div className="flex-1 min-w-0">
             <p
-              className="text-xs sm:text-sm font-medium"
+              className="text-sm font-medium"
               style={{ color: color.status.warning }}
             >
               Ready to launch?
             </p>
-            <p className={`text-xs ${tw.textMuted} mt-1 break-words`}>
+            <p className={`text-sm ${tw.textMuted} mt-1 break-words`}>
               Once you click "Launch Broadcast", the message will be{" "}
               {scheduleType === "now" ? "sent immediately" : "scheduled"} and
               cannot be cancelled. Please review all details carefully.
