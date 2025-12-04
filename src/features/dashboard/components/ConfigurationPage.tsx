@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Grid3X3, List, Eye, Settings } from "lucide-react";
-import { color, tw, components } from "../../../shared/utils/utils";
+import { Search, Grid3X3, List, Eye } from "lucide-react";
+import { color, tw, components, button } from "../../../shared/utils/utils";
 import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface ConfigurationItem {
@@ -346,24 +346,44 @@ export default function ConfigurationPage() {
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 lg:ml-6">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-all duration-200 ${
+              className={`rounded-md transition-all duration-200 ${
                 viewMode === "grid"
-                  ? ` text-[${color.primary.action}]`
+                  ? ""
                   : `${tw.textMuted} hover:${tw.textSecondary}`
               }`}
+              style={
+                viewMode === "grid"
+                  ? {
+                      backgroundColor: button.activeIconDisplay.background,
+                      color: button.activeIconDisplay.color,
+                      padding: `${button.activeIconDisplay.paddingY} ${button.activeIconDisplay.paddingX}`,
+                      borderRadius: button.activeIconDisplay.borderRadius,
+                    }
+                  : { padding: "0.5rem" }
+              }
             >
               <Grid3X3 className="h-5 w-5" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-all duration-200 ${
+              className={`rounded-md transition-all duration-200 ${
                 viewMode === "list"
-                  ? `text-[${color.primary.action}]`
+                  ? ""
                   : `${tw.textMuted} hover:${tw.textSecondary}`
               }`}
+              style={
+                viewMode === "list"
+                  ? {
+                      backgroundColor: button.activeIconDisplay.background,
+                      color: button.activeIconDisplay.color,
+                      padding: `${button.activeIconDisplay.paddingY} ${button.activeIconDisplay.paddingX}`,
+                      borderRadius: button.activeIconDisplay.borderRadius,
+                    }
+                  : { padding: "0.5rem" }
+              }
             >
               <List className="h-5 w-5" />
             </button>
@@ -417,16 +437,11 @@ export default function ConfigurationPage() {
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 rounded-md flex items-center justify-center bg-neutral-100">
-                          <Settings className={`h-5 w-5 ${tw.textPrimary}`} />
-                        </div>
-                        <h3
-                          className={`text-lg font-bold ${tw.textPrimary} leading-tight`}
-                        >
-                          {config.name}
-                        </h3>
-                      </div>
+                      <h3
+                        className={`text-lg font-bold ${tw.textPrimary} leading-tight mb-2`}
+                      >
+                        {config.name}
+                      </h3>
                       <p
                         className={`text-sm ${tw.textSecondary} leading-relaxed`}
                       >
@@ -452,57 +467,40 @@ export default function ConfigurationPage() {
           })}
         </div>
       ) : (
-        <div className={`${components.card.default} overflow-hidden`}>
-          <div className={`divide-y ${tw.borderDefault}`}>
-            {filteredConfigurations.map((config, index) => {
-              return (
-                <div
-                  key={config.id}
-                  onClick={() => handleConfigurationClick(config)}
-                  className={`group p-4 sm:p-6 hover:bg-neutral-100/50 transition-all duration-300 cursor-pointer`}
-                  style={{
-                    animation: `fadeInUp 0.6s ease-out forwards ${
-                      index * 0.1
-                    }s`,
-                    opacity: 0,
-                    transform: "translateY(20px)",
-                  }}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 rounded-md flex items-center justify-center flex-shrink-0 bg-neutral-100">
-                      <Settings className={`h-5 w-5 ${tw.textPrimary}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3
-                          className={`${tw.cardHeading} ${tw.textPrimary} group-hover:${tw.textSecondary} transition-colors duration-300`}
-                        >
-                          {config.name}
-                        </h3>
-                      </div>
-                      <p
-                        className={`${tw.cardSubHeading} ${tw.textSecondary} mb-2`}
-                      >
-                        {config.description}
-                      </p>
-                      <div
-                        className={`flex items-center justify-between gap-3 text-sm sm:text-base ${tw.textMuted}`}
-                      >
-                        <span
-                          className={`bg-neutral-100 px-2 py-1 rounded-full`}
-                        >
-                          {config.category}
-                        </span>
-                        <Eye
-                          className={`h-5 w-5 ${tw.textMuted} group-hover:text-[${color.primary.accent}] transition-colors duration-200 flex-shrink-0`}
-                        />
-                      </div>
+        <div className="space-y-3">
+          {filteredConfigurations.map((config, index) => {
+            return (
+              <div
+                key={config.id}
+                onClick={() => handleConfigurationClick(config)}
+                className="bg-white border border-gray-200 rounded-md p-4 hover:shadow-md transition-all cursor-pointer flex items-center justify-between"
+                style={{
+                  animation: `fadeInUp 0.6s ease-out forwards ${index * 0.1}s`,
+                  opacity: 0,
+                  transform: "translateY(20px)",
+                }}
+              >
+                <div className="flex items-center gap-4 flex-1 p-2">
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {config.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-0.5">
+                      {config.description}
+                    </p>
+                    <div className="mt-2">
+                      <span className="bg-neutral-100 px-2 py-1 rounded-full text-xs font-medium text-gray-600">
+                        {config.category}
+                      </span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                <Eye
+                  className={`h-5 w-5 ${tw.textMuted} group-hover:text-[${color.primary.accent}] transition-colors duration-200 flex-shrink-0 mr-2`}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 

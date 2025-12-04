@@ -220,29 +220,29 @@ export default function UserProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+          <h1 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>
             {t.profile.title}
           </h1>
           <p className={`text-sm ${tw.textSecondary} mt-1`}>
             {t.profile.description}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-auto">
           {isEditing ? (
             <>
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors w-auto"
               >
-                <X className="w-4 h-4 inline mr-2" />
+                <X className="w-4 h-4 mr-2" />
                 {t.profile.cancel}
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="inline-flex items-center text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed w-auto"
                 style={{
                   backgroundColor: button.action.background,
                   color: button.action.color,
@@ -257,7 +257,7 @@ export default function UserProfilePage() {
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 inline mr-2" />
+                    <Save className="w-4 h-4 mr-2" />
                     {t.profile.saveChanges}
                   </>
                 )}
@@ -266,7 +266,7 @@ export default function UserProfilePage() {
           ) : (
             <button
               onClick={() => setIsEditing(true)}
-              className="inline-flex items-center text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+              className="inline-flex items-center text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 w-auto"
               style={{
                 backgroundColor: button.action.background,
                 color: button.action.color,

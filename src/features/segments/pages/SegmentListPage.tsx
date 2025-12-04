@@ -239,22 +239,38 @@ export default function SegmentListPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded transition-colors ${
-              viewMode === "grid"
-                ? "bg-gray-200 text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
+            className={`rounded transition-colors ${
+              viewMode === "grid" ? "" : "text-gray-500 hover:text-gray-700"
             }`}
+            style={
+              viewMode === "grid"
+                ? {
+                    backgroundColor: button.activeIconDisplay.background,
+                    color: button.activeIconDisplay.color,
+                    padding: `${button.activeIconDisplay.paddingY} ${button.activeIconDisplay.paddingX}`,
+                    borderRadius: button.activeIconDisplay.borderRadius,
+                  }
+                : { padding: "0.5rem" }
+            }
             title="Grid View"
           >
             <Grid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded transition-colors ${
-              viewMode === "list"
-                ? "bg-gray-200 text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
+            className={`rounded transition-colors ${
+              viewMode === "list" ? "" : "text-gray-500 hover:text-gray-700"
             }`}
+            style={
+              viewMode === "list"
+                ? {
+                    backgroundColor: button.activeIconDisplay.background,
+                    color: button.activeIconDisplay.color,
+                    padding: `${button.activeIconDisplay.paddingY} ${button.activeIconDisplay.paddingX}`,
+                    borderRadius: button.activeIconDisplay.borderRadius,
+                  }
+                : { padding: "0.5rem" }
+            }
             title="List View"
           >
             <ListIcon className="w-4 h-4" />

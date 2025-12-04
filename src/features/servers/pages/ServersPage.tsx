@@ -983,7 +983,7 @@ export default function ServersPage() {
                         className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-black whitespace-nowrap"
                         style={{ backgroundColor: color.surface.tablebodybg }}
                       >
-                        <p className="text-xs text-black whitespace-nowrap">
+                        <p className="text-sm text-black whitespace-nowrap">
                           {`${server.protocol}://${server.host}${
                             server.port ? `:${server.port}` : ""
                           }${server.base_path || ""}`.replace(/\/+$/, "")}

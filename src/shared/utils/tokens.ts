@@ -498,6 +498,16 @@ export const buttons = {
     borderRadius: "0.5rem",
     fontSize: "0.875rem", // text-sm (14px)
   },
+
+  activeIconDisplay: {
+    background: colors.primary.accent, // Accent color background
+    color: "#FFFFFF", // White text
+    border: "none",
+    paddingY: "0.5rem", // p-2
+    paddingX: "0.5rem", // p-2
+    borderRadius: "0.375rem", // rounded-md
+    fontSize: "0.875rem", // text-sm
+  },
 };
 
 // Cards defines consistent styling for all card components
