@@ -74,7 +74,11 @@ import ScheduledJobsPage from "../../jobs/pages/ScheduledJobsPage";
 import ScheduledJobDetailsPage from "../../jobs/pages/ScheduledJobDetailsPage";
 import CreateScheduledJobPage from "../../jobs/pages/CreateScheduledJobPage";
 import ScheduledJobsAnalyticsPage from "../../jobs/pages/ScheduledJobsAnalyticsPage";
+import JobDependenciesPage from "../../jobs/pages/JobDependenciesPage";
 import NotificationsPage from "../../notifications/pages/NotificationsPage";
+import DNDManagementPage from "../../campaigns/pages/DNDManagementPage";
+import VIPListManagementPage from "../../campaigns/pages/VIPListManagementPage";
+import SeedListManagementPage from "../../campaigns/pages/SeedListManagementPage";
 
 export default function Dashboard() {
   return (
@@ -262,7 +266,17 @@ export default function Dashboard() {
           element={<ScheduledJobsAnalyticsPage />}
         />
         <Route path="/job-types" element={<JobTypesPage />} />
+        <Route path="/job-dependencies" element={<JobDependenciesPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/dnd-management" element={<DNDManagementPage />} />
+        <Route
+          path="/vip-list-management"
+          element={<VIPListManagementPage />}
+        />
+        <Route
+          path="/seed-list-management"
+          element={<SeedListManagementPage />}
+        />
       </Routes>
     </DashboardLayout>
   );

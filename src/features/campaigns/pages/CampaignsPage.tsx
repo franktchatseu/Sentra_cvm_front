@@ -514,19 +514,30 @@ export default function CampaignsPage() {
     }
   }, []);
 
-  // Fetch categories on component mount
+  // Fetch categories on component mount (non-blocking)
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Fetch campaigns when filters change
+  // Fetch campaigns when filters change (deferred to ensure page renders immediately)
   useEffect(() => {
-    fetchCampaigns();
+    // Defer to next event loop tick to ensure navigation and initial render complete first
+    const timer = setTimeout(() => {
+      fetchCampaigns();
+    }, 0);
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStatus, searchQuery, filters, currentPage, pageSize]);
 
+  // Fetch campaign stats (deferred to ensure page renders immediately)
   useEffect(() => {
-    fetchCampaignStats();
+    // Defer to next event loop tick to ensure navigation and initial render complete first
+    const timer = setTimeout(() => {
+      fetchCampaignStats();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [fetchCampaignStats]);
 
   // Close action menus when clicking outside

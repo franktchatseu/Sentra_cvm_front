@@ -34,6 +34,7 @@ import {
   User,
   Server,
   Database,
+  Link2,
 } from "lucide-react";
 import logo from "../../../assets/Effortel_logo.svg";
 import { color } from "../../../shared/utils/utils";
@@ -316,7 +317,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           },
         ],
       },
-       {
+      {
         name: "Customer Management",
         href: "/dashboard/customers",
         icon: Users,
@@ -339,7 +340,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           },
         ],
       },
-       {
+      {
         name: "User Management",
         href: "/dashboard/user-management",
         icon: UserCheck,
@@ -362,7 +363,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           },
         ],
       },
- {
+      {
         name: "Reports & Analytics",
         href: "/dashboard/reports",
         icon: LineChart,
@@ -437,9 +438,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         ],
       },
 
-     
-
-     
       {
         name: "Job Management",
         href: "/dashboard/jobs",
@@ -461,6 +459,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             type: "single",
             entity: "campaigns",
           },
+          {
+            name: "Job Dependencies",
+            href: "/dashboard/job-dependencies",
+            icon: Link2,
+            type: "single",
+            entity: "campaigns",
+          },
         ],
       },
       {
@@ -470,7 +475,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         type: "single",
         entity: "segments",
       },
-     
+
       {
         name: "Configuration",
         href: "/dashboard/configuration",

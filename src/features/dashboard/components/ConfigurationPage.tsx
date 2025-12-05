@@ -245,6 +245,37 @@ export default function ConfigurationPage() {
         status: "active",
         navigationPath: "/dashboard/job-types",
       },
+      // Customer list management configs
+      {
+        id: "dnd-management",
+        name: "DND Management",
+        description:
+          "Manage Do Not Disturb subscriptions - list, add, and remove customers from DND lists",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/dnd-management",
+      },
+      {
+        id: "vip-list-management",
+        name: "VIP List Management",
+        description:
+          "Manage VIP customer lists - add, remove, and organize VIP customers",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/vip-list-management",
+      },
+      {
+        id: "seed-list-management",
+        name: "Seed List Management",
+        description:
+          "Manage test recipients (staff) who receive campaign copies based on department and line of business",
+        type: "campaign",
+        category: "Campaign Configuration",
+        status: "active",
+        navigationPath: "/dashboard/seed-list-management",
+      },
     ];
 
     setConfigurations(allConfigurations);
