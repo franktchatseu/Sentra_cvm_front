@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-import { color, tw, components, button } from "../../../shared/utils/utils";
+import { color, tw } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import DateFormatter from "../../../shared/components/DateFormatter";
@@ -131,11 +131,10 @@ const DUMMY_VIP_LISTS: VIPList[] = [
 
 export default function VIPListManagementPage() {
   const navigate = useNavigate();
-  const { success: showToast, error: showError } = useToast();
-  const [vipCustomers, setVipCustomers] =
-    useState<VIPCustomer[]>(DUMMY_VIP_CUSTOMERS);
-  const [vipLists, setVipLists] = useState<VIPList[]>(DUMMY_VIP_LISTS);
-  const [loading, setLoading] = useState(false);
+  const { success: showToast } = useToast();
+  const [vipCustomers] = useState<VIPCustomer[]>(DUMMY_VIP_CUSTOMERS);
+  const [vipLists] = useState<VIPList[]>(DUMMY_VIP_LISTS);
+  const [loading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchTermLists, setSearchTermLists] = useState("");
   const [filterList, setFilterList] = useState<string>("all");
@@ -525,17 +524,17 @@ export default function VIPListManagementPage() {
                           borderBottomRightRadius: "0.375rem",
                         }}
                       >
-                        {customer.status === "active" ? (
-                          <button
-                            onClick={() => handleRemoveCustomer(customer)}
-                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                            title="Remove from VIP List"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
+                        <button
+                          onClick={() => handleRemoveCustomer(customer)}
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                          title={
+                            customer.status === "active"
+                              ? "Remove from VIP List"
+                              : "Delete from VIP List"
+                          }
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}

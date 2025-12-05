@@ -563,7 +563,7 @@ export default function SegmentManagementPage() {
       "Cannot access this functionality right now."
     );
     return;
-    /* eslint-disable-next-line no-unreachable */
+     
     setShowActionMenu(null);
     const confirmed = await confirm({
       title: "Duplicate Segment",
@@ -792,7 +792,7 @@ export default function SegmentManagementPage() {
       "Cannot access this functionality right now."
     );
     return;
-    /* eslint-disable-next-line no-unreachable */
+     
     setShowActionMenu(null);
     try {
       const segmentId = segment.id;

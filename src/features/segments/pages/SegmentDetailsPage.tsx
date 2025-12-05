@@ -282,7 +282,7 @@ export default function SegmentDetailsPage() {
     );
     setShowExportModal(false);
     return;
-    /* eslint-disable-next-line no-unreachable */
+     
     setIsExporting(true);
     try {
       const blob = await segmentService.exportSegment(Number(id), {

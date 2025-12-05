@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-import { color, tw, components, button } from "../../../shared/utils/utils";
+import { color, tw } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import DateFormatter from "../../../shared/components/DateFormatter";
@@ -110,11 +110,11 @@ const DUMMY_DND_SUBSCRIPTIONS: DNDSubscription[] = [
 
 export default function DNDManagementPage() {
   const navigate = useNavigate();
-  const { success: showToast, error: showError } = useToast();
-  const [dndSubscriptions, setDndSubscriptions] = useState<DNDSubscription[]>(
+  const { success: showToast } = useToast();
+  const [dndSubscriptions] = useState<DNDSubscription[]>(
     DUMMY_DND_SUBSCRIPTIONS
   );
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -191,30 +191,34 @@ export default function DNDManagementPage() {
           {/* Filters - 20% width */}
           <div className="flex flex-col md:flex-row gap-4 flex-[0.2]">
             {/* DND Type Filter */}
-            <HeadlessSelect
-              value={filterType}
-              onChange={setFilterType}
-              options={[
-                { value: "all", label: "All DND Types" },
-                ...DND_TYPES.map((type) => ({
-                  value: type.value,
-                  label: type.label,
-                })),
-              ]}
-              placeholder="Filter by DND Type"
-            />
+            <div className="flex-1 min-w-[180px]">
+              <HeadlessSelect
+                value={filterType}
+                onChange={setFilterType}
+                options={[
+                  { value: "all", label: "All DND Types" },
+                  ...DND_TYPES.map((type) => ({
+                    value: type.value,
+                    label: type.label,
+                  })),
+                ]}
+                placeholder="Filter by DND Type"
+              />
+            </div>
 
             {/* Status Filter */}
-            <HeadlessSelect
-              value={filterStatus}
-              onChange={setFilterStatus}
-              options={[
-                { value: "all", label: "All Status" },
-                { value: "active", label: "Active" },
-                { value: "removed", label: "Removed" },
-              ]}
-              placeholder="Filter by Status"
-            />
+            <div className="flex-1 min-w-[180px]">
+              <HeadlessSelect
+                value={filterStatus}
+                onChange={setFilterStatus}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "active", label: "Active" },
+                  { value: "removed", label: "Removed" },
+                ]}
+                placeholder="Filter by Status"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -231,11 +235,6 @@ export default function DNDManagementPage() {
             <h3 className={`text-lg font-medium ${tw.textPrimary} mb-2`}>
               No DND subscriptions found
             </h3>
-            <p className={`${tw.textMuted} mb-6`}>
-              {searchTerm
-                ? "Try adjusting your search terms"
-                : "No DND subscriptions available"}
-            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -397,7 +396,13 @@ export default function DNDManagementPage() {
                           <UserCheck className="w-4 h-4" />
                         </button>
                       ) : (
-                        <span className="text-xs text-gray-400">-</span>
+                        <button
+                          onClick={() => handleRemoveCustomer(subscription)}
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                          title="Delete from DND list"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
                     </td>
                   </tr>

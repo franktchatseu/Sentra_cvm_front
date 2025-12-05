@@ -75,6 +75,7 @@ import ScheduledJobDetailsPage from "../../jobs/pages/ScheduledJobDetailsPage";
 import CreateScheduledJobPage from "../../jobs/pages/CreateScheduledJobPage";
 import ScheduledJobsAnalyticsPage from "../../jobs/pages/ScheduledJobsAnalyticsPage";
 import JobDependenciesPage from "../../jobs/pages/JobDependenciesPage";
+import JobWorkflowStepsPage from "../../jobs/pages/JobWorkflowStepsPage";
 import NotificationsPage from "../../notifications/pages/NotificationsPage";
 import DNDManagementPage from "../../campaigns/pages/DNDManagementPage";
 import VIPListManagementPage from "../../campaigns/pages/VIPListManagementPage";
@@ -267,6 +268,7 @@ export default function Dashboard() {
         />
         <Route path="/job-types" element={<JobTypesPage />} />
         <Route path="/job-dependencies" element={<JobDependenciesPage />} />
+        <Route path="/job-workflow-steps" element={<JobWorkflowStepsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/dnd-management" element={<DNDManagementPage />} />
         <Route

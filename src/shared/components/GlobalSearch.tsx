@@ -109,7 +109,7 @@ export default function GlobalSearch({ onClose }: GlobalSearchProps) {
     setIsLoading(true);
     try {
       // Fetch roles to map role IDs to role names
-      let roleLookup: Record<number, Role> = {};
+      const roleLookup: Record<number, Role> = {};
       try {
         const rolesResponse = await roleService.listRoles({
           limit: 100,

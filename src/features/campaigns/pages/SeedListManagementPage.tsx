@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Search, Trash2, Mail } from "lucide-react";
 import { useToast } from "../../../contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
-import { color, tw, components, button } from "../../../shared/utils/utils";
+import { color, tw } from "../../../shared/utils/utils";
 import { navigateBackOrFallback } from "../../../shared/utils/navigation";
 import HeadlessSelect from "../../../shared/components/ui/HeadlessSelect";
 import DateFormatter from "../../../shared/components/DateFormatter";
@@ -121,15 +121,11 @@ const DUMMY_LINES_OF_BUSINESS: LineOfBusiness[] = [
 
 export default function SeedListManagementPage() {
   const navigate = useNavigate();
-  const { success: showToast, error: showError } = useToast();
-  const [recipients, setRecipients] =
-    useState<SeedListRecipient[]>(DUMMY_RECIPIENTS);
-  const [departments, setDepartments] =
-    useState<Department[]>(DUMMY_DEPARTMENTS);
-  const [linesOfBusiness, setLinesOfBusiness] = useState<LineOfBusiness[]>(
-    DUMMY_LINES_OF_BUSINESS
-  );
-  const [loading, setLoading] = useState(false);
+  const { success: showToast } = useToast();
+  const [recipients] = useState<SeedListRecipient[]>(DUMMY_RECIPIENTS);
+  const [departments] = useState<Department[]>(DUMMY_DEPARTMENTS);
+  const [linesOfBusiness] = useState<LineOfBusiness[]>(DUMMY_LINES_OF_BUSINESS);
+  const [loading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterLoB, setFilterLoB] = useState<string>("all");
@@ -161,6 +157,7 @@ export default function SeedListManagementPage() {
 
   const handleRemoveRecipient = (recipient: SeedListRecipient) => {
     // TODO: Implement remove functionality
+    void recipient; // Parameter will be used in future implementation
     showToast("Remove recipient functionality will be implemented");
   };
 
@@ -203,60 +200,118 @@ export default function SeedListManagementPage() {
 
       {/* Filters */}
       <div className="my-5">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search - 60% width */}
-          <div className="relative flex-[0.6]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157] text-sm"
-            />
+        {/* Mobile: Stack everything vertically */}
+        {/* md/lg: Search + Department on row 1, others on row 2 */}
+        {/* xl+: All on one row */}
+        <div className="flex flex-col gap-4">
+          {/* First Row: Search + Department on md/lg, all filters on xl+ */}
+          <div className="flex flex-col md:flex-row xl:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1 xl:flex-[0.6]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157] text-sm"
+              />
+            </div>
+
+            {/* Department Filter - on first row for md/lg, on same row for xl+ */}
+            <div className="hidden md:block xl:flex-[0.15]">
+              <HeadlessSelect
+                value={filterDepartment}
+                onChange={(value) => setFilterDepartment(value.toString())}
+                options={[
+                  { value: "all", label: "All Departments" },
+                  ...departments.map((dept) => ({
+                    value: dept.id.toString(),
+                    label: dept.name,
+                  })),
+                ]}
+                placeholder="Filter by Department"
+              />
+            </div>
+
+            {/* Line of Business - show on xl+ on same row */}
+            <div className="hidden xl:block xl:flex-[0.15]">
+              <HeadlessSelect
+                value={filterLoB}
+                onChange={(value) => setFilterLoB(value.toString())}
+                options={[
+                  { value: "all", label: "All Lines of Business" },
+                  ...linesOfBusiness.map((lob) => ({
+                    value: lob.id.toString(),
+                    label: lob.name,
+                  })),
+                ]}
+                placeholder="Filter by Line of Business"
+              />
+            </div>
+
+            {/* Status - show on xl+ on same row */}
+            <div className="hidden xl:block xl:flex-[0.1]">
+              <HeadlessSelect
+                value={filterStatus}
+                onChange={(value) => setFilterStatus(value.toString())}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ]}
+                placeholder="Filter by Status"
+              />
+            </div>
           </div>
 
-          {/* Filters - 40% width */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-[0.4]">
-            {/* Department Filter */}
-            <HeadlessSelect
-              value={filterDepartment}
-              onChange={setFilterDepartment}
-              options={[
-                { value: "all", label: "All Departments" },
-                ...departments.map((dept) => ({
-                  value: dept.id.toString(),
-                  label: dept.name,
-                })),
-              ]}
-              placeholder="Filter by Department"
-            />
+          {/* Second Row: Line of Business + Status (md/lg only), hidden on xl+ */}
+          <div className="flex flex-col md:flex-row xl:hidden gap-4">
+            {/* Department Filter - show on mobile only */}
+            <div className="md:hidden">
+              <HeadlessSelect
+                value={filterDepartment}
+                onChange={(value) => setFilterDepartment(value.toString())}
+                options={[
+                  { value: "all", label: "All Departments" },
+                  ...departments.map((dept) => ({
+                    value: dept.id.toString(),
+                    label: dept.name,
+                  })),
+                ]}
+                placeholder="Filter by Department"
+              />
+            </div>
 
-            {/* Line of Business Filter */}
-            <HeadlessSelect
-              value={filterLoB}
-              onChange={setFilterLoB}
-              options={[
-                { value: "all", label: "All Lines of Business" },
-                ...linesOfBusiness.map((lob) => ({
-                  value: lob.id.toString(),
-                  label: lob.name,
-                })),
-              ]}
-              placeholder="Filter by Line of Business"
-            />
+            {/* Line of Business Filter - md/lg only */}
+            <div className="flex-1 min-w-0">
+              <HeadlessSelect
+                value={filterLoB}
+                onChange={(value) => setFilterLoB(value.toString())}
+                options={[
+                  { value: "all", label: "All Lines of Business" },
+                  ...linesOfBusiness.map((lob) => ({
+                    value: lob.id.toString(),
+                    label: lob.name,
+                  })),
+                ]}
+                placeholder="Filter by Line of Business"
+              />
+            </div>
 
-            {/* Status Filter */}
-            <HeadlessSelect
-              value={filterStatus}
-              onChange={setFilterStatus}
-              options={[
-                { value: "all", label: "All Status" },
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
-              ]}
-              placeholder="Filter by Status"
-            />
+            {/* Status Filter - md/lg only */}
+            <div className="flex-1 min-w-0">
+              <HeadlessSelect
+                value={filterStatus}
+                onChange={(value) => setFilterStatus(value.toString())}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ]}
+                placeholder="Filter by Status"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -426,17 +481,17 @@ export default function SeedListManagementPage() {
                         borderBottomRightRadius: "0.375rem",
                       }}
                     >
-                      {recipient.status === "active" ? (
-                        <button
-                          onClick={() => handleRemoveRecipient(recipient)}
-                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                          title="Remove from Seed List"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
+                      <button
+                        onClick={() => handleRemoveRecipient(recipient)}
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                        title={
+                          recipient.status === "active"
+                            ? "Remove from Seed List"
+                            : "Delete from Seed List"
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}

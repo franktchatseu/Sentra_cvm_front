@@ -46,7 +46,7 @@ export default function CreateCommunicationModal({
   useEffect(() => {
     if (isOpen) {
       loadSampleData();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
     } else {
       // Reset form when modal closes
       setResult(null);

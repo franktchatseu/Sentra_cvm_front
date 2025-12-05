@@ -221,7 +221,7 @@ const baseCohortRetention: CohortPoint[] = [
 ];
 
 // Generate comprehensive dummy data that covers all filter combinations
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const generateCustomerRows = (): CustomerRow[] => {
   const segments = [
     "Champions",
