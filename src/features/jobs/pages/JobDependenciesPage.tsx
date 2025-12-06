@@ -538,6 +538,9 @@ export default function JobDependenciesPage() {
   const [deletingDependency, setDeletingDependency] =
     useState<JobDependency | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [deletingAllJobId, setDeletingAllJobId] = useState<number | null>(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [stats, setStats] = useState({
     totalDependencies: 0,
     activeDependencies: 0,
@@ -665,10 +668,14 @@ export default function JobDependenciesPage() {
           left = padding;
         }
 
+        // Calculate available space and set maxHeight accordingly
+        const availableSpace = shouldPositionAbove ? spaceAbove : spaceBelow;
+        const calculatedMaxHeight = Math.min(availableSpace - 20, 600); // Max 600px, but respect available space
+
         setDropdownPosition({
           top,
           left,
-          maxHeight: 400,
+          maxHeight: Math.max(calculatedMaxHeight, 300), // Minimum 300px
           width: dropdownWidth,
         });
       }
@@ -746,7 +753,7 @@ export default function JobDependenciesPage() {
   const [showImmediateDependenciesModal, setShowImmediateDependenciesModal] =
     useState(false);
   const [immediateDependenciesData, setImmediateDependenciesData] = useState<
-    JobDependency[]
+    number[]
   >([]);
   const [isLoadingImmediateDependencies, setIsLoadingImmediateDependencies] =
     useState(false);
@@ -1398,7 +1405,10 @@ export default function JobDependenciesPage() {
         jobId,
         true
       );
-      setImmediateDependenciesData(response.data || []);
+      // Response structure: {success: true, data: {jobIds: [20]}, ...}
+      const responseData = response.data as unknown as { jobIds?: number[] };
+      const jobIds = responseData?.jobIds || [];
+      setImmediateDependenciesData(Array.isArray(jobIds) ? jobIds : []);
     } catch (err) {
       const message =
         err instanceof Error
@@ -1661,28 +1671,35 @@ export default function JobDependenciesPage() {
   };
 
   // Handler for deleteAllDependenciesForJob
-  const handleDeleteAllForJob = async (jobId: number) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete all dependencies for Job ${jobId}?`
-      )
-    ) {
-      return;
-    }
+  const handleDeleteAllForJobClick = (jobId: number) => {
+    setDeletingAllJobId(jobId);
+    setShowDeleteAllModal(true);
+  };
+
+  const handleDeleteAllConfirm = async () => {
+    if (!deletingAllJobId) return;
+
     try {
+      setIsDeletingAll(true);
       const response = await jobDependencyService.deleteAllDependenciesForJob(
-        jobId
+        deletingAllJobId
       );
       showToast(
         "Dependencies deleted",
-        `${response.data?.removed || 0} dependencies removed for Job ${jobId}`
+        `${
+          response.data?.removed || 0
+        } dependencies removed for Job ${deletingAllJobId}`
       );
+      setShowDeleteAllModal(false);
+      setDeletingAllJobId(null);
       await fetchDependencies();
       await fetchStats();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to delete dependencies";
       showError("Unable to delete dependencies", message);
+    } finally {
+      setIsDeletingAll(false);
     }
   };
 
@@ -1981,7 +1998,7 @@ export default function JobDependenciesPage() {
                 <tr>
                   {isSelectionMode && (
                     <th
-                      className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                       style={{
                         color: color.surface.tableHeaderText,
                         backgroundColor: color.surface.tableHeader,
@@ -2013,7 +2030,7 @@ export default function JobDependenciesPage() {
                     Job ID
                   </th> */}
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
@@ -2034,7 +2051,7 @@ export default function JobDependenciesPage() {
                     Depends On Job ID
                   </th> */}
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
@@ -2043,7 +2060,7 @@ export default function JobDependenciesPage() {
                     Depends On Job Name
                   </th>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
@@ -2052,7 +2069,7 @@ export default function JobDependenciesPage() {
                     Type
                   </th>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
@@ -2061,7 +2078,7 @@ export default function JobDependenciesPage() {
                     Wait For
                   </th>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
@@ -2070,7 +2087,7 @@ export default function JobDependenciesPage() {
                     Status
                   </th>
                   <th
-                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
@@ -2079,7 +2096,7 @@ export default function JobDependenciesPage() {
                     Created
                   </th>
                   <th
-                    className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider"
+                    className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                     style={{
                       color: color.surface.tableHeaderText,
                       backgroundColor: color.surface.tableHeader,
@@ -2112,7 +2129,7 @@ export default function JobDependenciesPage() {
                       </td>
                     )}
                     {/* <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{
                         backgroundColor: color.surface.tablebodybg,
                         ...(!isSelectionMode && {
@@ -2126,7 +2143,7 @@ export default function JobDependenciesPage() {
                       </span>
                     </td> */}
                     <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{
                         backgroundColor: color.surface.tablebodybg,
                         ...(!isSelectionMode && {
@@ -2140,7 +2157,7 @@ export default function JobDependenciesPage() {
                       </span>
                     </td>
                     {/* <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className="text-sm text-gray-900 font-medium">
@@ -2148,7 +2165,7 @@ export default function JobDependenciesPage() {
                       </span>
                     </td> */}
                     <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className="text-sm text-gray-900">
@@ -2157,7 +2174,7 @@ export default function JobDependenciesPage() {
                       </span>
                     </td>
                     <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className="text-sm text-gray-900 capitalize">
@@ -2165,7 +2182,7 @@ export default function JobDependenciesPage() {
                       </span>
                     </td>
                     <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className="text-sm text-gray-900 capitalize">
@@ -2173,7 +2190,7 @@ export default function JobDependenciesPage() {
                       </span>
                     </td>
                     <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className="text-sm text-black capitalize">
@@ -2181,7 +2198,7 @@ export default function JobDependenciesPage() {
                       </span>
                     </td>
                     <td
-                      className="px-6 py-4"
+                      className="px-6 py-4 whitespace-nowrap"
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className="text-sm text-gray-600">
@@ -2457,13 +2474,15 @@ export default function JobDependenciesPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteAllForJob(dependency.job_id);
+                            handleDeleteAllForJobClick(dependency.job_id);
                             setShowActionMenu(null);
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4 mr-4 flex-shrink-0" />
-                          <span className="truncate">Delete All For Job</span>
+                          <span className="truncate">
+                            Delete All Dependencies
+                          </span>
                         </button>
                       </div>,
                       document.body
@@ -2509,15 +2528,15 @@ export default function JobDependenciesPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2527,7 +2546,7 @@ export default function JobDependenciesPage() {
                         Dependent Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2536,7 +2555,7 @@ export default function JobDependenciesPage() {
                         Depends On Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2545,7 +2564,7 @@ export default function JobDependenciesPage() {
                         Dependency Type
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2554,7 +2573,7 @@ export default function JobDependenciesPage() {
                         Wait For Status
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2563,7 +2582,7 @@ export default function JobDependenciesPage() {
                         Depth
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2578,7 +2597,7 @@ export default function JobDependenciesPage() {
                     {chainData.map((item, idx) => (
                       <tr key={item.id || idx} className="transition-colors">
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
@@ -2611,7 +2630,7 @@ export default function JobDependenciesPage() {
                           </div>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -2643,7 +2662,7 @@ export default function JobDependenciesPage() {
                           </div>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -2651,7 +2670,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -2659,7 +2678,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -2667,7 +2686,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
@@ -2808,15 +2827,15 @@ export default function JobDependenciesPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2826,7 +2845,7 @@ export default function JobDependenciesPage() {
                         ID
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2835,7 +2854,7 @@ export default function JobDependenciesPage() {
                         Job Name
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2844,7 +2863,7 @@ export default function JobDependenciesPage() {
                         Depends On Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2853,7 +2872,7 @@ export default function JobDependenciesPage() {
                         Type
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2862,7 +2881,7 @@ export default function JobDependenciesPage() {
                         Wait For Status
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2871,7 +2890,7 @@ export default function JobDependenciesPage() {
                         Active
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2880,7 +2899,7 @@ export default function JobDependenciesPage() {
                         Max Wait (min)
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2889,7 +2908,7 @@ export default function JobDependenciesPage() {
                         Lookback Days
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -2904,7 +2923,7 @@ export default function JobDependenciesPage() {
                     {dependenciesForJobData.map((item, idx) => (
                       <tr key={item.id || idx} className="transition-colors">
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
@@ -2916,7 +2935,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -2939,7 +2958,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -2963,7 +2982,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -2971,7 +2990,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -2979,7 +2998,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -2987,7 +3006,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -2995,7 +3014,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3003,7 +3022,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
@@ -3055,15 +3074,15 @@ export default function JobDependenciesPage() {
                 <p className="text-gray-500">No jobs depend on this job</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3073,7 +3092,7 @@ export default function JobDependenciesPage() {
                         ID
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3082,7 +3101,7 @@ export default function JobDependenciesPage() {
                         Dependent Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3091,7 +3110,7 @@ export default function JobDependenciesPage() {
                         Depends On Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3100,7 +3119,7 @@ export default function JobDependenciesPage() {
                         Type
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3109,7 +3128,7 @@ export default function JobDependenciesPage() {
                         Wait For Status
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3118,7 +3137,7 @@ export default function JobDependenciesPage() {
                         Active
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3127,7 +3146,7 @@ export default function JobDependenciesPage() {
                         Max Wait (min)
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3136,7 +3155,7 @@ export default function JobDependenciesPage() {
                         Lookback Days
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3151,7 +3170,7 @@ export default function JobDependenciesPage() {
                     {jobsDependingOnData.map((item, idx) => (
                       <tr key={item.id || idx} className="transition-colors">
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
@@ -3163,7 +3182,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -3186,7 +3205,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -3210,7 +3229,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -3218,7 +3237,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -3226,7 +3245,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3234,7 +3253,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3242,7 +3261,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3250,7 +3269,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
@@ -3303,15 +3322,15 @@ export default function JobDependenciesPage() {
                 <p className="text-gray-500">No blocking dependencies found</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3321,7 +3340,7 @@ export default function JobDependenciesPage() {
                         ID
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3330,7 +3349,7 @@ export default function JobDependenciesPage() {
                         Job Name
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3339,7 +3358,7 @@ export default function JobDependenciesPage() {
                         Depends On Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3348,7 +3367,7 @@ export default function JobDependenciesPage() {
                         Wait For Status
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3357,7 +3376,7 @@ export default function JobDependenciesPage() {
                         Active
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3366,7 +3385,7 @@ export default function JobDependenciesPage() {
                         Max Wait (min)
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3375,7 +3394,7 @@ export default function JobDependenciesPage() {
                         Lookback Days
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3390,7 +3409,7 @@ export default function JobDependenciesPage() {
                     {blockingDependenciesData.map((item, idx) => (
                       <tr key={item.id || idx} className="transition-colors">
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
@@ -3402,7 +3421,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -3425,7 +3444,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -3449,7 +3468,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -3457,7 +3476,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3465,7 +3484,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3473,7 +3492,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3481,7 +3500,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
@@ -3507,7 +3526,7 @@ export default function JobDependenciesPage() {
       {/* Immediate Dependencies Modal */}
       {showImmediateDependenciesModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
-          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-4xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -3533,143 +3552,72 @@ export default function JobDependenciesPage() {
                 <p className="text-gray-500">No immediate dependencies found</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
                           borderTopLeftRadius: "0.375rem",
                         }}
                       >
-                        Job Name
+                        Job ID
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                        style={{
-                          color: color.surface.tableHeaderText,
-                          backgroundColor: color.surface.tableHeader,
-                        }}
-                      >
-                        Depends On Job
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                        style={{
-                          color: color.surface.tableHeaderText,
-                          backgroundColor: color.surface.tableHeader,
-                        }}
-                      >
-                        Type
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
-                        style={{
-                          color: color.surface.tableHeaderText,
-                          backgroundColor: color.surface.tableHeader,
-                        }}
-                      >
-                        Wait For Status
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
                           borderTopRightRadius: "0.375rem",
                         }}
                       >
-                        Active
+                        Job Name
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {immediateDependenciesData.map((item, idx) => (
-                      <tr key={item.id || idx} className="transition-colors">
+                    {immediateDependenciesData.map((jobId, idx) => (
+                      <tr key={jobId || idx} className="transition-colors">
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
                             borderBottomLeftRadius: "0.375rem",
                           }}
                         >
-                          <button
-                            onClick={() => {
-                              navigate(
-                                `/dashboard/scheduled-jobs/${item.job_id}`
-                              );
-                              setShowImmediateDependenciesModal(false);
-                            }}
-                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color =
-                                color.primary.accent;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = "";
-                            }}
-                          >
-                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
-                          </button>
+                          <span className="text-sm text-gray-900">{jobId}</span>
                         </td>
                         <td
-                          className="px-6 py-4"
-                          style={{ backgroundColor: color.surface.tablebodybg }}
-                        >
-                          <button
-                            onClick={() => {
-                              navigate(
-                                `/dashboard/scheduled-jobs/${item.depends_on_job_id}`
-                              );
-                              setShowImmediateDependenciesModal(false);
-                            }}
-                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color =
-                                color.primary.accent;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = "";
-                            }}
-                          >
-                            {jobsMap.get(item.depends_on_job_id) ||
-                              `Job ${item.depends_on_job_id}`}
-                          </button>
-                        </td>
-                        <td
-                          className="px-6 py-4"
-                          style={{ backgroundColor: color.surface.tablebodybg }}
-                        >
-                          <span className="text-sm text-gray-900 capitalize">
-                            {item.dependency_type}
-                          </span>
-                        </td>
-                        <td
-                          className="px-6 py-4"
-                          style={{ backgroundColor: color.surface.tablebodybg }}
-                        >
-                          <span className="text-sm text-gray-900 capitalize">
-                            {item.wait_for_status}
-                          </span>
-                        </td>
-                        <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
                             borderBottomRightRadius: "0.375rem",
                           }}
                         >
-                          <span className="text-sm text-gray-900">
-                            {item.is_active ? "Active" : "Inactive"}
-                          </span>
+                          <button
+                            onClick={() => {
+                              navigate(`/dashboard/scheduled-jobs/${jobId}`);
+                              setShowImmediateDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(jobId) || `Job ${jobId}`}
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -3710,15 +3658,15 @@ export default function JobDependenciesPage() {
                 <p className="text-gray-500">No dependent jobs found</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3729,7 +3677,7 @@ export default function JobDependenciesPage() {
                         Job ID
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3744,7 +3692,7 @@ export default function JobDependenciesPage() {
                     {allDependentsData.map((jobId, idx) => (
                       <tr key={jobId || idx} className="transition-colors">
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
@@ -3754,7 +3702,7 @@ export default function JobDependenciesPage() {
                           <span className="text-sm text-gray-900">{jobId}</span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
@@ -3818,15 +3766,15 @@ export default function JobDependenciesPage() {
                 <p className="text-gray-500">All dependencies are satisfied</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3836,7 +3784,7 @@ export default function JobDependenciesPage() {
                         Job Name
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3845,7 +3793,7 @@ export default function JobDependenciesPage() {
                         Depends On Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3854,7 +3802,7 @@ export default function JobDependenciesPage() {
                         Type
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3863,7 +3811,7 @@ export default function JobDependenciesPage() {
                         Wait For Status
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -3881,7 +3829,7 @@ export default function JobDependenciesPage() {
                         className="transition-colors"
                       >
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
@@ -3894,7 +3842,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -3918,7 +3866,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -3926,7 +3874,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -3934,7 +3882,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
@@ -3985,15 +3933,15 @@ export default function JobDependenciesPage() {
                 <p className="text-gray-500">No complex dependencies found</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                 <table
-                  className="w-full"
+                  className="w-full min-w-[800px]"
                   style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
                   <thead>
                     <tr>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -4003,7 +3951,7 @@ export default function JobDependenciesPage() {
                         Job Name
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -4012,7 +3960,7 @@ export default function JobDependenciesPage() {
                         Depends On Job
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -4021,7 +3969,7 @@ export default function JobDependenciesPage() {
                         Type
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -4030,7 +3978,7 @@ export default function JobDependenciesPage() {
                         Wait For Status
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -4039,7 +3987,7 @@ export default function JobDependenciesPage() {
                         Lookback Days
                       </th>
                       <th
-                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap"
                         style={{
                           color: color.surface.tableHeaderText,
                           backgroundColor: color.surface.tableHeader,
@@ -4054,7 +4002,7 @@ export default function JobDependenciesPage() {
                     {complexDependenciesModalData.map((item, idx) => (
                       <tr key={item.id || idx} className="transition-colors">
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopLeftRadius: "0.375rem",
@@ -4081,7 +4029,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <button
@@ -4105,7 +4053,7 @@ export default function JobDependenciesPage() {
                           </button>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -4113,7 +4061,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
@@ -4121,7 +4069,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
@@ -4129,7 +4077,7 @@ export default function JobDependenciesPage() {
                           </span>
                         </td>
                         <td
-                          className="px-6 py-4"
+                          className="px-6 py-4 whitespace-nowrap"
                           style={{
                             backgroundColor: color.surface.tablebodybg,
                             borderTopRightRadius: "0.375rem",
@@ -4472,6 +4420,21 @@ export default function JobDependenciesPage() {
         itemName={`Dependency ${deletingDependency?.id || ""}`}
         isLoading={isDeleting}
         confirmText="Delete"
+        cancelText="Cancel"
+      />
+
+      <DeleteConfirmModal
+        isOpen={showDeleteAllModal}
+        onClose={() => {
+          setShowDeleteAllModal(false);
+          setDeletingAllJobId(null);
+        }}
+        onConfirm={handleDeleteAllConfirm}
+        title="Delete All Dependencies"
+        description="Are you sure you want to delete all dependencies for this job? This action cannot be undone."
+        itemName={`Job ${deletingAllJobId || ""}`}
+        isLoading={isDeletingAll}
+        confirmText="Delete All"
         cancelText="Cancel"
       />
     </div>
