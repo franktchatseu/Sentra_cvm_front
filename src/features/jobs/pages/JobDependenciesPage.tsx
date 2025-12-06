@@ -190,8 +190,8 @@ function JobDependencyModal({
   }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+      <div className="w-full max-w-lg rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
@@ -391,8 +391,8 @@ function JobDependencyViewModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+      <div className="w-full max-w-lg rounded-xl bg-white p-4 sm:p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
@@ -678,9 +678,6 @@ export default function JobDependenciesPage() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [statusData, setStatusData] = useState<any>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
-  const [showSatisfiedModal, setShowSatisfiedModal] = useState(false);
-  const [satisfiedData, setSatisfiedData] = useState<any>(null);
-  const [isLoadingSatisfied, setIsLoadingSatisfied] = useState(false);
   // Analytics endpoints state
   const [showGraphModal, setShowGraphModal] = useState(false);
   const [graphData, setGraphData] = useState<any[]>([]);
@@ -691,6 +688,70 @@ export default function JobDependenciesPage() {
     JobDependency[]
   >([]);
   const [selectedJobId, setSelectedJobId] = useState<number | "">("");
+
+  // Modals for the 7 new endpoints
+  const [showDependenciesForJobModal, setShowDependenciesForJobModal] =
+    useState(false);
+  const [dependenciesForJobData, setDependenciesForJobData] = useState<
+    JobDependency[]
+  >([]);
+  const [isLoadingDependenciesForJob, setIsLoadingDependenciesForJob] =
+    useState(false);
+  const [dependenciesForJobTitle, setDependenciesForJobTitle] = useState("");
+
+  const [showJobsDependingOnModal, setShowJobsDependingOnModal] =
+    useState(false);
+  const [jobsDependingOnData, setJobsDependingOnData] = useState<
+    JobDependency[]
+  >([]);
+  const [isLoadingJobsDependingOn, setIsLoadingJobsDependingOn] =
+    useState(false);
+  const [jobsDependingOnTitle, setJobsDependingOnTitle] = useState("");
+
+  const [showBlockingDependenciesModal, setShowBlockingDependenciesModal] =
+    useState(false);
+  const [blockingDependenciesData, setBlockingDependenciesData] = useState<
+    JobDependency[]
+  >([]);
+  const [isLoadingBlockingDependencies, setIsLoadingBlockingDependencies] =
+    useState(false);
+  const [blockingDependenciesTitle, setBlockingDependenciesTitle] =
+    useState("");
+
+  const [showImmediateDependenciesModal, setShowImmediateDependenciesModal] =
+    useState(false);
+  const [immediateDependenciesData, setImmediateDependenciesData] = useState<
+    JobDependency[]
+  >([]);
+  const [isLoadingImmediateDependencies, setIsLoadingImmediateDependencies] =
+    useState(false);
+  const [immediateDependenciesTitle, setImmediateDependenciesTitle] =
+    useState("");
+
+  const [showAllDependentsModal, setShowAllDependentsModal] = useState(false);
+  const [allDependentsData, setAllDependentsData] = useState<number[]>([]);
+  const [isLoadingAllDependents, setIsLoadingAllDependents] = useState(false);
+  const [allDependentsTitle, setAllDependentsTitle] = useState("");
+
+  const [
+    showUnsatisfiedDependenciesModal,
+    setShowUnsatisfiedDependenciesModal,
+  ] = useState(false);
+  const [unsatisfiedDependenciesData, setUnsatisfiedDependenciesData] =
+    useState<JobDependency[]>([]);
+  const [
+    isLoadingUnsatisfiedDependencies,
+    setIsLoadingUnsatisfiedDependencies,
+  ] = useState(false);
+  const [unsatisfiedDependenciesTitle, setUnsatisfiedDependenciesTitle] =
+    useState("");
+
+  const [showComplexDependenciesModal, setShowComplexDependenciesModal] =
+    useState(false);
+  const [complexDependenciesModalData, setComplexDependenciesModalData] =
+    useState<JobDependency[]>([]);
+  const [isLoadingComplexDependencies, setIsLoadingComplexDependencies] =
+    useState(false);
 
   const fetchDependencies = useCallback(async () => {
     setIsLoading(true);
@@ -1158,23 +1219,31 @@ export default function JobDependenciesPage() {
 
   // Handler for getDependenciesForJob
   const handleGetDependenciesForJob = async (jobId: number) => {
+    setIsLoadingDependenciesForJob(true);
+    setShowDependenciesForJobModal(true);
+    setDependenciesForJobTitle(`Dependencies for Job ${jobId}`);
     try {
       const response = await jobDependencyService.getDependenciesForJob(jobId, {
         limit: 100,
         skipCache: true,
         activeOnly: false,
       });
-      setDependencies(response.data || []);
-      showToast("Dependencies loaded", `Loaded dependencies for Job ${jobId}`);
+      setDependenciesForJobData(response.data || []);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dependencies";
       showError("Unable to load dependencies", message);
+      setShowDependenciesForJobModal(false);
+    } finally {
+      setIsLoadingDependenciesForJob(false);
     }
   };
 
   // Handler for getJobsDependingOn
   const handleGetJobsDependingOn = async (dependsOnJobId: number) => {
+    setIsLoadingJobsDependingOn(true);
+    setShowJobsDependingOnModal(true);
+    setJobsDependingOnTitle(`Jobs Depending On Job ${dependsOnJobId}`);
     try {
       const response = await jobDependencyService.getJobsDependingOn(
         dependsOnJobId,
@@ -1184,15 +1253,14 @@ export default function JobDependenciesPage() {
           activeOnly: false,
         }
       );
-      setDependencies(response.data || []);
-      showToast(
-        "Dependencies loaded",
-        `Loaded jobs depending on Job ${dependsOnJobId}`
-      );
+      setJobsDependingOnData(response.data || []);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dependencies";
       showError("Unable to load dependencies", message);
+      setShowJobsDependingOnModal(false);
+    } finally {
+      setIsLoadingJobsDependingOn(false);
     }
   };
 
@@ -1218,6 +1286,9 @@ export default function JobDependenciesPage() {
 
   // Handler for getBlockingDependencies
   const handleGetBlockingDependencies = async (jobId: number) => {
+    setIsLoadingBlockingDependencies(true);
+    setShowBlockingDependenciesModal(true);
+    setBlockingDependenciesTitle(`Blocking Dependencies for Job ${jobId}`);
     try {
       const response = await jobDependencyService.getBlockingDependencies(
         jobId,
@@ -1226,17 +1297,16 @@ export default function JobDependenciesPage() {
           skipCache: true,
         }
       );
-      setDependencies(response.data || []);
-      showToast(
-        "Blocking dependencies loaded",
-        `Loaded blocking dependencies for Job ${jobId}`
-      );
+      setBlockingDependenciesData(response.data || []);
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
           : "Failed to load blocking dependencies";
       showError("Unable to load blocking dependencies", message);
+      setShowBlockingDependenciesModal(false);
+    } finally {
+      setIsLoadingBlockingDependencies(false);
     }
   };
 
@@ -1279,79 +1349,94 @@ export default function JobDependenciesPage() {
 
   // Handler for getImmediateDependencies
   const handleGetImmediateDependencies = async (jobId: number) => {
+    setIsLoadingImmediateDependencies(true);
+    setShowImmediateDependenciesModal(true);
+    setImmediateDependenciesTitle(`Immediate Dependencies for Job ${jobId}`);
     try {
       const response = await jobDependencyService.getImmediateDependencies(
         jobId,
         true
       );
-      setDependencies(response.data || []);
-      showToast(
-        "Immediate dependencies loaded",
-        `Loaded immediate dependencies for Job ${jobId}`
-      );
+      setImmediateDependenciesData(response.data || []);
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
           : "Failed to load immediate dependencies";
       showError("Unable to load immediate dependencies", message);
+      setShowImmediateDependenciesModal(false);
+    } finally {
+      setIsLoadingImmediateDependencies(false);
     }
   };
 
   // Handler for getAllDependents
   const handleGetAllDependents = async (jobId: number) => {
+    setIsLoadingAllDependents(true);
+    setShowAllDependentsModal(true);
+    setAllDependentsTitle(`All Dependents for Job ${jobId}`);
     try {
       const response = await jobDependencyService.getAllDependents(jobId, true);
-      showToast(
-        "Dependents loaded",
-        `Job ${jobId} has ${response.data?.jobIds?.length || 0} dependent jobs`
-      );
+      setAllDependentsData(response.data?.jobIds || []);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dependents";
       showError("Unable to load dependents", message);
+      setShowAllDependentsModal(false);
+    } finally {
+      setIsLoadingAllDependents(false);
     }
   };
 
   // Handler for checkDependenciesSatisfied
   const handleCheckDependenciesSatisfied = async (jobId: number) => {
-    setIsLoadingSatisfied(true);
-    setShowSatisfiedModal(true);
     try {
       const response = await jobDependencyService.checkDependenciesSatisfied(
         jobId,
         true
       );
-      setSatisfiedData(response.data);
+      const isSatisfied = response.data?.satisfied;
+
+      if (isSatisfied) {
+        showToast(
+          "All Dependencies Satisfied",
+          "This job can proceed with execution as all its dependencies have been completed successfully."
+        );
+      } else {
+        showError(
+          "Dependencies Not Satisfied",
+          "This job cannot proceed yet. One or more dependencies have not been satisfied (not completed successfully)."
+        );
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to check dependencies";
       showError("Unable to check dependencies", message);
-      setShowSatisfiedModal(false);
-    } finally {
-      setIsLoadingSatisfied(false);
     }
   };
 
   // Handler for getUnsatisfiedDependencies
   const handleGetUnsatisfiedDependencies = async (jobId: number) => {
-    setIsLoadingStatus(true);
-    setShowStatusModal(true);
+    setIsLoadingUnsatisfiedDependencies(true);
+    setShowUnsatisfiedDependenciesModal(true);
+    setUnsatisfiedDependenciesTitle(
+      `Unsatisfied Dependencies for Job ${jobId}`
+    );
     try {
       const response = await jobDependencyService.getUnsatisfiedDependencies(
         jobId,
         true
       );
-      setStatusData(response.data || []);
+      setUnsatisfiedDependenciesData(response.data || []);
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
           : "Failed to load unsatisfied dependencies";
       showError("Unable to load unsatisfied dependencies", message);
-      setShowStatusModal(false);
+      setShowUnsatisfiedDependenciesModal(false);
     } finally {
-      setIsLoadingStatus(false);
+      setIsLoadingUnsatisfiedDependencies(false);
     }
   };
 
@@ -1502,20 +1587,20 @@ export default function JobDependenciesPage() {
 
   // Handler for getComplexDependencies (Analytics)
   const handleGetComplexDependencies = async () => {
+    setIsLoadingComplexDependencies(true);
+    setShowComplexDependenciesModal(true);
     try {
       const response = await jobDependencyService.getComplexDependencies(true);
-      setComplexDependencies(response.data || []);
-      setDependencies(response.data || []);
-      showToast(
-        "Complex dependencies loaded",
-        "Loaded dependencies with complex structures"
-      );
+      setComplexDependenciesModalData(response.data || []);
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
           : "Failed to load complex dependencies";
       showError("Unable to load complex dependencies", message);
+      setShowComplexDependenciesModal(false);
+    } finally {
+      setIsLoadingComplexDependencies(false);
     }
   };
 
@@ -1551,7 +1636,7 @@ export default function JobDependenciesPage() {
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div>
-          <h1 className={`text-2xl font-bold ${tw.textPrimary}`}>
+          <h1 className={`text-xl sm:text-2xl font-bold ${tw.textPrimary}`}>
             Job Dependencies
           </h1>
           <p className={`${tw.textSecondary} mt-2 text-sm`}>
@@ -1559,7 +1644,7 @@ export default function JobDependenciesPage() {
             order.
           </p>
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             onClick={() => {
               if (!isSelectionMode) {
@@ -1586,11 +1671,16 @@ export default function JobDependenciesPage() {
             ) : (
               <Square className="h-4 w-4" />
             )}
-            {isSelectionMode ? "Exit Selection" : "Select Dependencies"}
+            <span className="hidden sm:inline">
+              {isSelectionMode ? "Exit Selection" : "Select Dependencies"}
+            </span>
+            <span className="sm:hidden">
+              {isSelectionMode ? "Exit" : "Select"}
+            </span>
           </button>
           <button
             onClick={() => navigate("/dashboard/job-dependencies/analytics")}
-            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
+            className="inline-flex items-center gap-2 rounded-md px-3 sm:px-4 py-2 text-sm font-medium focus:outline-none transition-colors"
             style={{
               backgroundColor: "transparent",
               color: color.primary.action,
@@ -1598,21 +1688,22 @@ export default function JobDependenciesPage() {
             }}
           >
             <BarChart3 className="h-4 w-4" />
-            Analytics
+            <span className="hidden sm:inline">Analytics</span>
           </button>
           <button
             onClick={handleCreate}
-            className="px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm text-white"
+            className="px-3 sm:px-4 py-2 rounded-md font-semibold flex items-center gap-2 text-sm text-white"
             style={{ backgroundColor: color.primary.action }}
           >
             <Plus className="w-4 h-4" />
-            Create Dependency
+            <span className="hidden sm:inline">Create Dependency</span>
+            <span className="sm:hidden">Create</span>
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
             <Link2
@@ -1686,7 +1777,7 @@ export default function JobDependenciesPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:gap-4">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <input
@@ -1702,56 +1793,58 @@ export default function JobDependenciesPage() {
             </div>
           )}
         </div>
-        <HeadlessSelect
-          options={[
-            { value: "all", label: "All Types" },
-            { value: "blocking", label: "Blocking" },
-            { value: "optional", label: "Optional" },
-            { value: "cross_day", label: "Cross Day" },
-            { value: "conditional", label: "Conditional" },
-          ]}
-          value={dependencyTypeFilter}
-          onChange={setDependencyTypeFilter}
-          placeholder="Filter by type"
-          className="w-auto min-w-[180px]"
-        />
-        <HeadlessSelect
-          options={[
-            { value: "all", label: "All Status" },
-            { value: "active", label: "Active" },
-            { value: "inactive", label: "Inactive" },
-          ]}
-          value={statusFilter}
-          onChange={setStatusFilter}
-          placeholder="Filter by status"
-          className="w-auto min-w-[180px]"
-        />
-        <button
-          onClick={() => setShowAdvancedFilters(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-        >
-          <Filter className="h-4 w-4" />
-          <span>Filters</span>
-          {(filterId ||
-            filterJobId ||
-            filterDependsOnJobId ||
-            filterDependencyType ||
-            filterWaitForStatus ||
-            filterIsActive !== "" ||
-            filterLookbackDaysMin ||
-            filterLookbackDaysMax ||
-            filterMaxWaitMinutesMin ||
-            filterMaxWaitMinutesMax) && (
-            <span className="ml-1 inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">
-              Active
-            </span>
-          )}
-        </button>
+        <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+          <HeadlessSelect
+            options={[
+              { value: "all", label: "All Types" },
+              { value: "blocking", label: "Blocking" },
+              { value: "optional", label: "Optional" },
+              { value: "cross_day", label: "Cross Day" },
+              { value: "conditional", label: "Conditional" },
+            ]}
+            value={dependencyTypeFilter}
+            onChange={setDependencyTypeFilter}
+            placeholder="Filter by type"
+            className="w-full md:w-auto md:min-w-[180px]"
+          />
+          <HeadlessSelect
+            options={[
+              { value: "all", label: "All Status" },
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ]}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            placeholder="Filter by status"
+            className="w-full md:w-auto md:min-w-[180px]"
+          />
+          <button
+            onClick={() => setShowAdvancedFilters(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 whitespace-nowrap"
+          >
+            <Filter className="h-4 w-4" />
+            <span>Filters</span>
+            {(filterId ||
+              filterJobId ||
+              filterDependsOnJobId ||
+              filterDependencyType ||
+              filterWaitForStatus ||
+              filterIsActive !== "" ||
+              filterLookbackDaysMin ||
+              filterLookbackDaysMax ||
+              filterMaxWaitMinutesMin ||
+              filterMaxWaitMinutesMax) && (
+              <span className="ml-1 inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">
+                Active
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Batch Actions Toolbar */}
       {isSelectionMode && selectedDependencyIds.size > 0 && (
-        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">
               {selectedDependencyIds.size} dependency(ies) selected
@@ -1832,7 +1925,7 @@ export default function JobDependenciesPage() {
                 <tr>
                   {isSelectionMode && (
                     <th
-                      className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                      className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium uppercase tracking-wider"
                       style={{
                         color: color.surface.tableHeaderText,
                         backgroundColor: color.surface.tableHeader,
@@ -1947,7 +2040,7 @@ export default function JobDependenciesPage() {
                   <tr key={dependency.id} className="transition-colors">
                     {isSelectionMode && (
                       <td
-                        className="px-6 py-4"
+                        className="px-3 sm:px-6 py-3 sm:py-4"
                         style={{
                           backgroundColor: color.surface.tablebodybg,
                           borderTopLeftRadius: "0.375rem",
@@ -2125,13 +2218,15 @@ export default function JobDependenciesPage() {
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
                           {dependency.is_active ? (
-                            <XCircle className="w-4 h-4 mr-4" />
+                            <XCircle className="w-4 h-4 mr-4 flex-shrink-0" />
                           ) : (
-                            <CheckCircle className="w-4 h-4 mr-4" />
+                            <CheckCircle className="w-4 h-4 mr-4 flex-shrink-0" />
                           )}
-                          {dependency.is_active
-                            ? "Deactivate Dependency"
-                            : "Activate Dependency"}
+                          <span className="truncate">
+                            {dependency.is_active
+                              ? "Deactivate Dependency"
+                              : "Activate Dependency"}
+                          </span>
                         </button>
 
                         <button
@@ -2142,8 +2237,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Link2 className="w-4 h-4 mr-4" />
-                          View Dependency Chain
+                          <Link2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            View Dependency Chain
+                          </span>
                         </button>
 
                         <button
@@ -2154,8 +2251,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <CheckCircle className="w-4 h-4 mr-4" />
-                          Check Dependencies Satisfied
+                          <CheckCircle className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Check Dependencies Satisfied
+                          </span>
                         </button>
 
                         <button
@@ -2166,8 +2265,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Filter className="w-4 h-4 mr-4" />
-                          View Dependency Status
+                          <Filter className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            View Dependency Status
+                          </span>
                         </button>
 
                         <button
@@ -2178,8 +2279,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Link2 className="w-4 h-4 mr-4" />
-                          Get Dependencies For Job
+                          <Link2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Get Dependencies For Job
+                          </span>
                         </button>
 
                         <button
@@ -2192,8 +2295,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Link2 className="w-4 h-4 mr-4" />
-                          Get Jobs Depending On
+                          <Link2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Get Jobs Depending On
+                          </span>
                         </button>
 
                         <button
@@ -2207,8 +2312,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Eye className="w-4 h-4 mr-4" />
-                          Get Specific Dependency
+                          <Eye className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Get Specific Dependency
+                          </span>
                         </button>
 
                         <button
@@ -2219,8 +2326,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <AlertTriangle className="w-4 h-4 mr-4" />
-                          Get Blocking Dependencies
+                          <AlertTriangle className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Get Blocking Dependencies
+                          </span>
                         </button>
 
                         <button
@@ -2231,8 +2340,8 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Link2 className="w-4 h-4 mr-4" />
-                          Get Critical Path
+                          <Link2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">Get Critical Path</span>
                         </button>
 
                         <button
@@ -2243,8 +2352,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Link2 className="w-4 h-4 mr-4" />
-                          Get Immediate Dependencies
+                          <Link2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Get Immediate Dependencies
+                          </span>
                         </button>
 
                         <button
@@ -2255,8 +2366,8 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Link2 className="w-4 h-4 mr-4" />
-                          Get All Dependents
+                          <Link2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">Get All Dependents</span>
                         </button>
 
                         <button
@@ -2267,8 +2378,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <XCircle className="w-4 h-4 mr-4" />
-                          Get Unsatisfied Dependencies
+                          <XCircle className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Get Unsatisfied Dependencies
+                          </span>
                         </button>
 
                         <button
@@ -2279,8 +2392,10 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-black"
                         >
-                          <Link2 className="w-4 h-4 mr-4" />
-                          Get Complex Dependencies
+                          <Link2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">
+                            Get Complex Dependencies
+                          </span>
                         </button>
 
                         <button
@@ -2291,8 +2406,8 @@ export default function JobDependenciesPage() {
                           }}
                           className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50"
                         >
-                          <Trash2 className="w-4 h-4 mr-4" />
-                          Delete All For Job
+                          <Trash2 className="w-4 h-4 mr-4 flex-shrink-0" />
+                          <span className="truncate">Delete All For Job</span>
                         </button>
                       </div>,
                       document.body
@@ -2308,8 +2423,8 @@ export default function JobDependenciesPage() {
 
       {/* Chain/Path Modal */}
       {showChainModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-6xl rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -2519,8 +2634,8 @@ export default function JobDependenciesPage() {
 
       {/* Status Modal */}
       {showStatusModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-4xl rounded-xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-4xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
@@ -2545,7 +2660,7 @@ export default function JobDependenciesPage() {
               <div className="space-y-6">
                 {statusData ? (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       <div className="rounded-md border border-gray-200 bg-white p-6 shadow-sm">
                         <div className="text-sm font-medium text-gray-600 mb-1">
                           Total Dependencies
@@ -2606,63 +2721,1384 @@ export default function JobDependenciesPage() {
         </div>
       )}
 
-      {/* Satisfied Check Modal */}
-      {showSatisfiedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+      {/* Dependencies For Job Modal */}
+      {showDependenciesForJobModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Dependencies Satisfied Check
+                  {dependenciesForJobTitle}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Checks if all dependencies for this job have been satisfied
-                  (completed successfully)
+                  All dependencies configured for this job
                 </p>
               </div>
               <button
-                onClick={() => setShowSatisfiedModal(false)}
+                onClick={() => setShowDependenciesForJobModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 ✕
               </button>
             </div>
-            {isLoadingSatisfied ? (
+            {isLoadingDependenciesForJob ? (
               <div className="flex justify-center py-8">
                 <LoadingSpinner />
               </div>
+            ) : dependenciesForJobData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">
+                  No dependencies found for this job
+                </p>
+              </div>
             ) : (
-              <div className="space-y-4">
-                <div
-                  className={`p-6 rounded-lg border-2 ${
-                    satisfiedData?.satisfied
-                      ? "bg-green-50 border-green-200"
-                      : "bg-red-50 border-red-200"
-                  }`}
+              <div className="overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    {satisfiedData?.satisfied ? (
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                    ) : (
-                      <XCircle className="w-6 h-6 text-red-600" />
-                    )}
-                    <div className="font-semibold text-lg text-gray-900">
-                      {satisfiedData?.satisfied
-                        ? "All Dependencies Satisfied"
-                        : "Dependencies Not Satisfied"}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700 mt-2">
-                    {satisfiedData?.satisfied
-                      ? "This job can proceed with execution as all its dependencies have been completed successfully."
-                      : "This job cannot proceed yet. One or more dependencies have not been satisfied (not completed successfully)."}
-                  </p>
-                </div>
-                {satisfiedData?.source && (
-                  <div className="text-xs text-gray-500 text-center">
-                    Source: {satisfiedData.source}
-                  </div>
-                )}
+                  <thead>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopLeftRadius: "0.375rem",
+                        }}
+                      >
+                        ID
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Job Name
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Depends On Job
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Type
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Wait For Status
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Active
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Max Wait (min)
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Lookback Days
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Created At
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dependenciesForJobData.map((item, idx) => (
+                      <tr key={item.id || idx} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.id}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.job_id}`
+                              );
+                              setShowDependenciesForJobModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.depends_on_job_id}`
+                              );
+                              setShowDependenciesForJobModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.depends_on_job_id) ||
+                              `Job ${item.depends_on_job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.dependency_type}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.wait_for_status}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.max_wait_minutes || "-"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.lookback_days ?? "-"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopRightRadius: "0.375rem",
+                            borderBottomRightRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.created_at
+                              ? new Date(item.created_at).toLocaleString()
+                              : "-"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Jobs Depending On Modal */}
+      {showJobsDependingOnModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {jobsDependingOnTitle}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  All jobs that depend on this job
+                </p>
+              </div>
+              <button
+                onClick={() => setShowJobsDependingOnModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {isLoadingJobsDependingOn ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : jobsDependingOnData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No jobs depend on this job</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopLeftRadius: "0.375rem",
+                        }}
+                      >
+                        ID
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Dependent Job
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Depends On Job
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Type
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Wait For Status
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Active
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Max Wait (min)
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Lookback Days
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Created At
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {jobsDependingOnData.map((item, idx) => (
+                      <tr key={item.id || idx} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.id}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.job_id}`
+                              );
+                              setShowJobsDependingOnModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.depends_on_job_id}`
+                              );
+                              setShowJobsDependingOnModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.depends_on_job_id) ||
+                              `Job ${item.depends_on_job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.dependency_type}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.wait_for_status}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.max_wait_minutes || "-"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.lookback_days ?? "-"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopRightRadius: "0.375rem",
+                            borderBottomRightRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.created_at
+                              ? new Date(item.created_at).toLocaleString()
+                              : "-"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Blocking Dependencies Modal */}
+      {showBlockingDependenciesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {blockingDependenciesTitle}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Blocking dependencies that must be satisfied before this job
+                  can run
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBlockingDependenciesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {isLoadingBlockingDependencies ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : blockingDependenciesData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No blocking dependencies found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopLeftRadius: "0.375rem",
+                        }}
+                      >
+                        ID
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Job Name
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Depends On Job
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Wait For Status
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Active
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Max Wait (min)
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Lookback Days
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Created At
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {blockingDependenciesData.map((item, idx) => (
+                      <tr key={item.id || idx} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.id}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.job_id}`
+                              );
+                              setShowBlockingDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.depends_on_job_id}`
+                              );
+                              setShowBlockingDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.depends_on_job_id) ||
+                              `Job ${item.depends_on_job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.wait_for_status}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.max_wait_minutes || "-"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.lookback_days ?? "-"}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopRightRadius: "0.375rem",
+                            borderBottomRightRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.created_at
+                              ? new Date(item.created_at).toLocaleString()
+                              : "-"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Immediate Dependencies Modal */}
+      {showImmediateDependenciesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {immediateDependenciesTitle}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Direct dependencies (first level only) for this job
+                </p>
+              </div>
+              <button
+                onClick={() => setShowImmediateDependenciesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {isLoadingImmediateDependencies ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : immediateDependenciesData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No immediate dependencies found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopLeftRadius: "0.375rem",
+                        }}
+                      >
+                        Job Name
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Depends On Job
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Type
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Wait For Status
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Active
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {immediateDependenciesData.map((item, idx) => (
+                      <tr key={item.id || idx} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.job_id}`
+                              );
+                              setShowImmediateDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.depends_on_job_id}`
+                              );
+                              setShowImmediateDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.depends_on_job_id) ||
+                              `Job ${item.depends_on_job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.dependency_type}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.wait_for_status}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopRightRadius: "0.375rem",
+                            borderBottomRightRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* All Dependents Modal */}
+      {showAllDependentsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-4xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {allDependentsTitle}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  All jobs that depend on this job (directly or indirectly)
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAllDependentsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {isLoadingAllDependents ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : allDependentsData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No dependent jobs found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopLeftRadius: "0.375rem",
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Job ID
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Job Name
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allDependentsData.map((jobId, idx) => (
+                      <tr key={jobId || idx} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">{jobId}</span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopRightRadius: "0.375rem",
+                            borderBottomRightRadius: "0.375rem",
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(`/dashboard/scheduled-jobs/${jobId}`);
+                              setShowAllDependentsModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(jobId) || `Job ${jobId}`}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Unsatisfied Dependencies Modal */}
+      {showUnsatisfiedDependenciesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {unsatisfiedDependenciesTitle}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Dependencies that have not been satisfied yet (blocking job
+                  execution)
+                </p>
+              </div>
+              <button
+                onClick={() => setShowUnsatisfiedDependenciesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {isLoadingUnsatisfiedDependencies ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : unsatisfiedDependenciesData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">All dependencies are satisfied</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopLeftRadius: "0.375rem",
+                        }}
+                      >
+                        Job Name
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Depends On Job
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Type
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Wait For Status
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Max Wait (min)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unsatisfiedDependenciesData.map((item, idx) => (
+                      <tr key={item.id || idx} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.job_id}`
+                              );
+                              setShowUnsatisfiedDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.depends_on_job_id}`
+                              );
+                              setShowUnsatisfiedDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.depends_on_job_id) ||
+                              `Job ${item.depends_on_job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.dependency_type}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.wait_for_status}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopRightRadius: "0.375rem",
+                            borderBottomRightRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.max_wait_minutes || "-"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Complex Dependencies Modal */}
+      {showComplexDependenciesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-6xl rounded-xl bg-white p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Complex Dependencies
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Dependencies with complex structures (conditional, cross-day,
+                  etc.)
+                </p>
+              </div>
+              <button
+                onClick={() => setShowComplexDependenciesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {isLoadingComplexDependencies ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : complexDependenciesModalData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No complex dependencies found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table
+                  className="w-full"
+                  style={{ borderCollapse: "separate", borderSpacing: "0 8px" }}
+                >
+                  <thead>
+                    <tr>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopLeftRadius: "0.375rem",
+                        }}
+                      >
+                        Job Name
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Depends On Job
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Type
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Wait For Status
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                        }}
+                      >
+                        Lookback Days
+                      </th>
+                      <th
+                        className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider"
+                        style={{
+                          color: color.surface.tableHeaderText,
+                          backgroundColor: color.surface.tableHeader,
+                          borderTopRightRadius: "0.375rem",
+                        }}
+                      >
+                        Max Wait (min)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {complexDependenciesModalData.map((item, idx) => (
+                      <tr key={item.id || idx} className="transition-colors">
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopLeftRadius: "0.375rem",
+                            borderBottomLeftRadius: "0.375rem",
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.job_id}`
+                              );
+                              setShowComplexDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <button
+                            onClick={() => {
+                              navigate(
+                                `/dashboard/scheduled-jobs/${item.depends_on_job_id}`
+                              );
+                              setShowComplexDependenciesModal(false);
+                            }}
+                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color =
+                                color.primary.accent;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color = "";
+                            }}
+                          >
+                            {jobsMap.get(item.depends_on_job_id) ||
+                              `Job ${item.depends_on_job_id}`}
+                          </button>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.dependency_type}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900 capitalize">
+                            {item.wait_for_status}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{ backgroundColor: color.surface.tablebodybg }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.lookback_days || 0}
+                          </span>
+                        </td>
+                        <td
+                          className="px-6 py-4"
+                          style={{
+                            backgroundColor: color.surface.tablebodybg,
+                            borderTopRightRadius: "0.375rem",
+                            borderBottomRightRadius: "0.375rem",
+                          }}
+                        >
+                          <span className="text-sm text-gray-900">
+                            {item.max_wait_minutes || "-"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -2679,7 +4115,7 @@ export default function JobDependenciesPage() {
             <div
               className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out"
               onClick={() => setShowAdvancedFilters(false)}
-            ></div>
+            />
             <div
               ref={filterRef}
               className="absolute right-0 top-0 h-full w-full sm:w-[28rem] lg:w-96 bg-white shadow-xl transform transition-transform duration-300 ease-out translate-x-0"
@@ -2786,17 +4222,19 @@ export default function JobDependenciesPage() {
                           { value: "", label: "All Statuses" },
                           { value: "success", label: "Success" },
                           { value: "failure", label: "Failure" },
-                          {
-                            value: "partial_success",
-                            label: "Partial Success",
-                          },
-                          { value: "pending", label: "Pending" },
-                          { value: "queued", label: "Queued" },
-                          { value: "running", label: "Running" },
-                          { value: "aborted", label: "Aborted" },
-                          { value: "timeout", label: "Timeout" },
-                          { value: "skipped", label: "Skipped" },
-                          { value: "cancelled", label: "Cancelled" },
+                          { value: "completed", label: "Completed" },
+                          { value: "any", label: "Any" },
+                          // {
+                          //   value: "partial_success",
+                          //   label: "Partial Success",
+                          // },
+                          // { value: "pending", label: "Pending" },
+                          // { value: "queued", label: "Queued" },
+                          // { value: "running", label: "Running" },
+                          // { value: "aborted", label: "Aborted" },
+                          // { value: "timeout", label: "Timeout" },
+                          // { value: "skipped", label: "Skipped" },
+                          // { value: "cancelled", label: "Cancelled" },
                         ]}
                         value={filterWaitForStatus}
                         onChange={setFilterWaitForStatus}
