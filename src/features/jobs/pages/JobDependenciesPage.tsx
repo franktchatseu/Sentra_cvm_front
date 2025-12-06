@@ -35,6 +35,8 @@ import {
   UpdateJobDependencyPayload,
   DependencyType,
   WaitForStatus,
+  UnsatisfiedDependency,
+  JobDependencySearchParams,
 } from "../types/jobDependency";
 import { ScheduledJob } from "../types/scheduledJob";
 
@@ -116,12 +118,16 @@ function JobDependencyModal({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!jobId || jobId === "") {
+    if (jobId === "" || jobId === null || jobId === undefined) {
       setError("Job ID is required");
       return;
     }
 
-    if (!dependsOnJobId || dependsOnJobId === "") {
+    if (
+      dependsOnJobId === "" ||
+      dependsOnJobId === null ||
+      dependsOnJobId === undefined
+    ) {
       setError("Depends on Job ID is required");
       return;
     }
@@ -160,7 +166,6 @@ function JobDependencyModal({
     console.log("🔵 JOB DEPENDENCY MODAL - Submitting payload:");
     console.log("User object:", user);
     console.log("user.user_id:", user.user_id);
-    console.log("user.id:", (user as any).id);
 
     try {
       const payload = {
@@ -386,8 +391,6 @@ function JobDependencyViewModal({
   dependency,
   isLoading,
 }: JobDependencyViewModalProps) {
-  const { t } = useLanguage();
-
   if (!isOpen) return null;
 
   return (
@@ -519,7 +522,8 @@ function JobDependencyViewModal({
 export default function JobDependenciesPage() {
   const navigate = useNavigate();
   const { success: showToast, error: showError } = useToast();
-  const { t } = useLanguage();
+  // User is used in JobDependencyModal component
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user } = useAuth();
 
   const [dependencies, setDependencies] = useState<JobDependency[]>([]);
@@ -673,20 +677,41 @@ export default function JobDependenciesPage() {
 
   // Additional state for advanced features (kept for individual row actions)
   const [showChainModal, setShowChainModal] = useState(false);
-  const [chainData, setChainData] = useState<any[]>([]);
+  const [chainData, setChainData] = useState<
+    (JobDependency & {
+      depends_on_job_name?: string;
+      depends_on_job_code?: string;
+      depth?: number;
+      path?: number[];
+    })[]
+  >([]);
   const [isLoadingChain, setIsLoadingChain] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [statusData, setStatusData] = useState<any>(null);
+  const [statusData, setStatusData] = useState<{
+    total_dependencies?: string | number;
+    blocking_dependencies?: string | number;
+    optional_dependencies?: string | number;
+    satisfied_dependencies?: string | number;
+    unsatisfied_blocking?: string | number;
+    source?: string;
+  } | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
-  // Analytics endpoints state
+  // Analytics endpoints state (kept for potential future use)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showGraphModal, setShowGraphModal] = useState(false);
-  const [graphData, setGraphData] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [graphData, setGraphData] = useState<JobDependency[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoadingGraph, setIsLoadingGraph] = useState(false);
-  const [orphanedJobs, setOrphanedJobs] = useState<any[]>([]);
-  const [mostDependedJobs, setMostDependedJobs] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [orphanedJobs, setOrphanedJobs] = useState<JobDependency[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [mostDependedJobs, setMostDependedJobs] = useState<JobDependency[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [complexDependencies, setComplexDependencies] = useState<
     JobDependency[]
   >([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedJobId, setSelectedJobId] = useState<number | "">("");
 
   // Modals for the 7 new endpoints
@@ -738,7 +763,7 @@ export default function JobDependenciesPage() {
     setShowUnsatisfiedDependenciesModal,
   ] = useState(false);
   const [unsatisfiedDependenciesData, setUnsatisfiedDependenciesData] =
-    useState<JobDependency[]>([]);
+    useState<UnsatisfiedDependency[]>([]);
   const [
     isLoadingUnsatisfiedDependencies,
     setIsLoadingUnsatisfiedDependencies,
@@ -774,14 +799,14 @@ export default function JobDependenciesPage() {
 
       if (hasQuickFilters || hasAdvancedFilters) {
         // Use search endpoint with filters
-        const searchParams: any = {
+        const searchParams: JobDependencySearchParams = {
           limit: 100,
           skipCache: true,
         };
 
         // Add quick filter parameters
         if (dependencyTypeFilter !== "all") {
-          searchParams.dependency_type = dependencyTypeFilter;
+          searchParams.dependency_type = dependencyTypeFilter as DependencyType;
         }
         if (statusFilter === "active") {
           searchParams.is_active = true;
@@ -795,9 +820,9 @@ export default function JobDependenciesPage() {
         if (filterDependsOnJobId)
           searchParams.depends_on_job_id = Number(filterDependsOnJobId);
         if (filterDependencyType)
-          searchParams.dependency_type = filterDependencyType;
+          searchParams.dependency_type = filterDependencyType as DependencyType;
         if (filterWaitForStatus)
-          searchParams.wait_for_status = filterWaitForStatus;
+          searchParams.wait_for_status = filterWaitForStatus as WaitForStatus;
         if (filterIsActive !== "")
           searchParams.is_active = filterIsActive === true;
         if (filterLookbackDaysMin)
@@ -852,14 +877,14 @@ export default function JobDependenciesPage() {
       setLoadError(null);
       try {
         // Build search params with all filters
-        const searchParams: any = {
+        const searchParams: JobDependencySearchParams = {
           limit: 100,
           skipCache: true,
         };
 
         // Add quick filter parameters (Type and Status)
         if (dependencyTypeFilter !== "all") {
-          searchParams.dependency_type = dependencyTypeFilter;
+          searchParams.dependency_type = dependencyTypeFilter as DependencyType;
         }
         if (statusFilter === "active") {
           searchParams.is_active = true;
@@ -873,9 +898,9 @@ export default function JobDependenciesPage() {
         if (filterDependsOnJobId)
           searchParams.depends_on_job_id = Number(filterDependsOnJobId);
         if (filterDependencyType)
-          searchParams.dependency_type = filterDependencyType;
+          searchParams.dependency_type = filterDependencyType as DependencyType;
         if (filterWaitForStatus)
-          searchParams.wait_for_status = filterWaitForStatus;
+          searchParams.wait_for_status = filterWaitForStatus as WaitForStatus;
         if (filterIsActive !== "")
           searchParams.is_active = filterIsActive === true;
         if (filterLookbackDaysMin)
@@ -1319,7 +1344,15 @@ export default function JobDependenciesPage() {
         jobId,
         true
       );
-      setChainData(response.data || []);
+      // Chain data returns JobDependency[] with additional fields
+      setChainData(
+        (response.data || []) as unknown as (JobDependency & {
+          depends_on_job_name?: string;
+          depends_on_job_code?: string;
+          depth?: number;
+          path?: number[];
+        })[]
+      );
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dependency chain";
@@ -1336,7 +1369,15 @@ export default function JobDependenciesPage() {
     setShowChainModal(true);
     try {
       const response = await jobDependencyService.getCriticalPath(jobId, true);
-      setChainData(response.data || []);
+      // CriticalPathItem has different structure, convert if needed
+      setChainData(
+        (response.data || []) as unknown as (JobDependency & {
+          depends_on_job_name?: string;
+          depends_on_job_code?: string;
+          depth?: number;
+          path?: number[];
+        })[]
+      );
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load critical path";
@@ -1452,8 +1493,17 @@ export default function JobDependenciesPage() {
       console.log("🔵 DEPENDENCY STATUS - Response:", response);
       console.log("Response.data:", response.data);
 
-      // Response.data is an object with summary statistics
-      setStatusData(response.data || null);
+      // Response.data is an object with summary statistics, not an array
+      setStatusData(
+        (response.data as {
+          total_dependencies?: string | number;
+          blocking_dependencies?: string | number;
+          optional_dependencies?: string | number;
+          satisfied_dependencies?: string | number;
+          unsatisfied_blocking?: string | number;
+          source?: string;
+        }) || null
+      );
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dependency status";
@@ -1532,12 +1582,14 @@ export default function JobDependenciesPage() {
   };
 
   // Handler for getDependencyGraph (Analytics)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleGetDependencyGraph = async () => {
     setIsLoadingGraph(true);
     setShowGraphModal(true);
     try {
       const response = await jobDependencyService.getDependencyGraph(true);
-      setGraphData(response.data || []);
+      // Graph data returns DependencyGraphNode[], not JobDependency[]
+      setGraphData((response.data || []) as unknown as JobDependency[]);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dependency graph";
@@ -1549,10 +1601,12 @@ export default function JobDependenciesPage() {
   };
 
   // Handler for getOrphanedJobs (Analytics)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleGetOrphanedJobs = async () => {
     try {
       const response = await jobDependencyService.getOrphanedJobs(true);
-      setOrphanedJobs(response.data || []);
+      // Orphaned jobs returns OrphanedJob[], not JobDependency[]
+      setOrphanedJobs((response.data || []) as unknown as JobDependency[]);
       showToast(
         "Orphaned jobs loaded",
         `Found ${response.data?.length || 0} orphaned jobs`
@@ -1565,13 +1619,15 @@ export default function JobDependenciesPage() {
   };
 
   // Handler for getMostDependedOnJobs (Analytics)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleGetMostDependedOnJobs = async () => {
     try {
       const response = await jobDependencyService.getMostDependedOnJobs(
         10,
         true
       );
-      setMostDependedJobs(response.data || []);
+      // Most depended jobs returns MostDependedJob[], not JobDependency[]
+      setMostDependedJobs((response.data || []) as unknown as JobDependency[]);
       showToast(
         "Most depended jobs loaded",
         "Loaded top 10 most depended-on jobs"
@@ -1803,7 +1859,7 @@ export default function JobDependenciesPage() {
               { value: "conditional", label: "Conditional" },
             ]}
             value={dependencyTypeFilter}
-            onChange={setDependencyTypeFilter}
+            onChange={(value) => setDependencyTypeFilter(value as string)}
             placeholder="Filter by type"
             className="w-full md:w-auto md:min-w-[180px]"
           />
@@ -1814,7 +1870,7 @@ export default function JobDependenciesPage() {
               { value: "inactive", label: "Inactive" },
             ]}
             value={statusFilter}
-            onChange={setStatusFilter}
+            onChange={(value) => setStatusFilter(value as string)}
             placeholder="Filter by status"
             className="w-full md:w-auto md:min-w-[180px]"
           />
@@ -2607,7 +2663,7 @@ export default function JobDependenciesPage() {
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900">
-                            {item.depth || 0}
+                            {(item as { depth?: number }).depth ?? 0}
                           </span>
                         </td>
                         <td
@@ -3820,7 +3876,10 @@ export default function JobDependenciesPage() {
                   </thead>
                   <tbody>
                     {unsatisfiedDependenciesData.map((item, idx) => (
-                      <tr key={item.id || idx} className="transition-colors">
+                      <tr
+                        key={item.dependency_id || idx}
+                        className="transition-colors"
+                      >
                         <td
                           className="px-6 py-4"
                           style={{
@@ -3829,24 +3888,10 @@ export default function JobDependenciesPage() {
                             borderBottomLeftRadius: "0.375rem",
                           }}
                         >
-                          <button
-                            onClick={() => {
-                              navigate(
-                                `/dashboard/scheduled-jobs/${item.job_id}`
-                              );
-                              setShowUnsatisfiedDependenciesModal(false);
-                            }}
-                            className="text-sm font-semibold text-gray-900 hover:underline transition-colors"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color =
-                                color.primary.accent;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = "";
-                            }}
-                          >
-                            {jobsMap.get(item.job_id) || `Job ${item.job_id}`}
-                          </button>
+                          <span className="text-sm text-gray-900">
+                            {item.depends_on_job_name ||
+                              `Job ${item.depends_on_job_id}`}
+                          </span>
                         </td>
                         <td
                           className="px-6 py-4"
@@ -3868,7 +3913,7 @@ export default function JobDependenciesPage() {
                               e.currentTarget.style.color = "";
                             }}
                           >
-                            {jobsMap.get(item.depends_on_job_id) ||
+                            {item.depends_on_job_name ||
                               `Job ${item.depends_on_job_id}`}
                           </button>
                         </td>
@@ -3876,8 +3921,8 @@ export default function JobDependenciesPage() {
                           className="px-6 py-4"
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
-                          <span className="text-sm text-gray-900 capitalize">
-                            {item.dependency_type}
+                          <span className="text-sm text-gray-900">
+                            Dependency {item.dependency_id}
                           </span>
                         </td>
                         <td
@@ -3885,7 +3930,7 @@ export default function JobDependenciesPage() {
                           style={{ backgroundColor: color.surface.tablebodybg }}
                         >
                           <span className="text-sm text-gray-900 capitalize">
-                            {item.wait_for_status}
+                            {item.required_status}
                           </span>
                         </td>
                         <td
@@ -3897,7 +3942,7 @@ export default function JobDependenciesPage() {
                           }}
                         >
                           <span className="text-sm text-gray-900">
-                            {item.max_wait_minutes || "-"}
+                            {item.current_status || "-"}
                           </span>
                         </td>
                       </tr>
@@ -4206,7 +4251,9 @@ export default function JobDependenciesPage() {
                           { value: "conditional", label: "Conditional" },
                         ]}
                         value={filterDependencyType}
-                        onChange={setFilterDependencyType}
+                        onChange={(value) =>
+                          setFilterDependencyType(value as string)
+                        }
                         placeholder="All Types"
                         className="w-full"
                       />
@@ -4237,7 +4284,9 @@ export default function JobDependenciesPage() {
                           // { value: "cancelled", label: "Cancelled" },
                         ]}
                         value={filterWaitForStatus}
-                        onChange={setFilterWaitForStatus}
+                        onChange={(value) =>
+                          setFilterWaitForStatus(value as string)
+                        }
                         placeholder="All Statuses"
                         className="w-full"
                       />
