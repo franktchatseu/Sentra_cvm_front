@@ -306,7 +306,11 @@ export default function UserDetailsPage() {
       <div className="flex gap-1 border-b border-gray-200">
         {[
           { id: "overview", label: t.userManagement.overview, icon: User },
-          { id: "permissions", label: t.userManagement.permissions, icon: Shield },
+          {
+            id: "permissions",
+            label: t.userManagement.permissions,
+            icon: Shield,
+          },
           { id: "reports", label: t.userManagement.reports, icon: Users },
         ].map((tab) => (
           <button
@@ -346,7 +350,9 @@ export default function UserDetailsPage() {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-start py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.fullName}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.fullName}
+                      </span>
                       <span className="text-sm font-medium text-gray-900 text-right">
                         {`${user.first_name} ${user.middle_name || ""} ${
                           user.last_name
@@ -354,20 +360,26 @@ export default function UserDetailsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-start py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.username}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.username}
+                      </span>
                       <span className="text-sm font-medium text-gray-900">
                         {user.username || "N/A"}
                       </span>
                     </div>
                     <div className="flex justify-between items-start py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.email}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.email}
+                      </span>
                       <span className="text-sm font-medium text-gray-900 text-right">
                         {user.email_address || user.email || "N/A"}
                       </span>
                     </div>
                     {user.phone_number && (
                       <div className="flex justify-between items-start py-2 ">
-                        <span className="text-sm text-gray-600">{t.userManagement.phone}</span>
+                        <span className="text-sm text-gray-600">
+                          {t.userManagement.phone}
+                        </span>
                         <span className="text-sm font-medium text-gray-900">
                           {user.phone_number}
                         </span>
@@ -393,7 +405,9 @@ export default function UserDetailsPage() {
                       </div>
                     )}
                     <div className="flex justify-between items-start py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.role}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.role}
+                      </span>
                       <span className="text-sm font-medium text-gray-900">
                         {getUserRoleName(user)}
                       </span>
@@ -433,22 +447,32 @@ export default function UserDetailsPage() {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.status}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.status}
+                      </span>
                       <span className="text-sm font-medium text-gray-900 capitalize">
                         {statusLabel}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.mfa}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.mfa}
+                      </span>
                       <span className="text-sm font-medium text-gray-900">
-                        {user.mfa_enabled ? t.userManagement.enabled : t.userManagement.disabled}
+                        {user.mfa_enabled
+                          ? t.userManagement.enabled
+                          : t.userManagement.disabled}
                       </span>
                     </div>
                     {canLogin && (
                       <div className="flex justify-between items-center py-2 ">
-                        <span className="text-sm text-gray-600">{t.userManagement.canLogin}</span>
+                        <span className="text-sm text-gray-600">
+                          {t.userManagement.canLogin}
+                        </span>
                         <span className="text-sm font-medium text-gray-900">
-                          {canLogin.can_login ? t.userManagement.yes : t.userManagement.no}
+                          {canLogin.can_login
+                            ? t.userManagement.yes
+                            : t.userManagement.no}
                         </span>
                       </div>
                     )}
@@ -458,7 +482,9 @@ export default function UserDetailsPage() {
                           {t.userManagement.piiAccess}
                         </span>
                         <span className="text-sm font-medium text-gray-900">
-                          {user.can_access_pii ? t.userManagement.allowed : t.userManagement.restricted}
+                          {user.can_access_pii
+                            ? t.userManagement.allowed
+                            : t.userManagement.restricted}
                         </span>
                       </div>
                     )}
@@ -472,7 +498,9 @@ export default function UserDetailsPage() {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.created}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.created}
+                      </span>
                       <span className="text-sm font-medium text-gray-900">
                         <DateFormatter
                           date={user.created_at}
@@ -484,7 +512,9 @@ export default function UserDetailsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 ">
-                      <span className="text-sm text-gray-600">{t.userManagement.updated}</span>
+                      <span className="text-sm text-gray-600">
+                        {t.userManagement.updated}
+                      </span>
                       <span className="text-sm font-medium text-gray-900">
                         <DateFormatter
                           date={user.updated_at}
@@ -552,7 +582,9 @@ export default function UserDetailsPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-500">{t.userManagement.loadingPermissions}</p>
+              <p className="text-sm text-gray-500">
+                {t.userManagement.loadingPermissions}
+              </p>
             )}
           </div>
         </div>
@@ -761,7 +793,10 @@ export default function UserDetailsPage() {
                   {hasPermissions && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                        {t.userManagement.allPermissions.replace("{count}", permissionsList.length.toString())}
+                        {t.userManagement.allPermissions.replace(
+                          "{count}",
+                          permissionsList.length.toString()
+                        )}
                       </h3>
                       <div
                         className={`rounded-md border border-[${color.border.default}] overflow-hidden`}
@@ -802,7 +837,7 @@ export default function UserDetailsPage() {
                                     color: color.surface.tableHeaderText,
                                   }}
                                 >
-                                  {t.userManagement.description}
+                                  {t.userManagement.permissionDescription}
                                 </th>
                                 <th
                                   className="px-6 py-4 text-center text-sm font-medium uppercase tracking-wider w-16"
@@ -908,7 +943,10 @@ export default function UserDetailsPage() {
                   {hasRoles && (
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                        {t.userManagement.assignedRoles.replace("{count}", rolesList.length.toString())}
+                        {t.userManagement.assignedRoles.replace(
+                          "{count}",
+                          rolesList.length.toString()
+                        )}
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {rolesList.map((role) => (
@@ -950,7 +988,10 @@ export default function UserDetailsPage() {
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {t.userManagement.directReports.replace("{count}", directReports.length.toString())}
+                  {t.userManagement.directReports.replace(
+                    "{count}",
+                    directReports.length.toString()
+                  )}
                 </h3>
                 <div className="space-y-2">
                   {directReports.map((report) => (
@@ -990,7 +1031,10 @@ export default function UserDetailsPage() {
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {t.userManagement.allReports.replace("{count}", allReports.length.toString())}
+                  {t.userManagement.allReports.replace(
+                    "{count}",
+                    allReports.length.toString()
+                  )}
                 </h3>
                 <p className="text-xs text-gray-600 mb-3">
                   {t.userManagement.includesDirectAndIndirect}
@@ -1049,7 +1093,10 @@ export default function UserDetailsPage() {
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  {t.userManagement.managerChain.replace("{count}", managerChain.length.toString())}
+                  {t.userManagement.managerChain.replace(
+                    "{count}",
+                    managerChain.length.toString()
+                  )}
                 </h3>
                 <div className="space-y-2">
                   {managerChain.map((manager) => (
@@ -1091,7 +1138,9 @@ export default function UserDetailsPage() {
                 <p className="text-base font-medium text-gray-900 mb-1">
                   {t.userManagement.noReportsOrManagers}
                 </p>
-                <p className="text-sm text-gray-500">{t.userManagement.noDirectReportsYet}</p>
+                <p className="text-sm text-gray-500">
+                  {t.userManagement.noDirectReportsYet}
+                </p>
               </div>
             )}
           </div>

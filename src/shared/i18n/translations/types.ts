@@ -374,7 +374,7 @@ export interface Translations {
     allPermissions: string; // {count}
     permission: string;
     code: string;
-    description: string;
+    permissionDescription: string;
     assignedRoles: string; // {count}
     noPermissionsData: string;
     permissionInfoNotAvailable: string;
@@ -414,6 +414,45 @@ export interface Translations {
     noItems: string;
     tryAdjustingSearch: string;
     createFirstItem: string;
+    saving: string;
+    update: string; // {entityName}
+    create: string; // {entityName}
+    description: string;
+    actions: string;
+    noDescription: string;
+    error: string;
+    failedToSave: string; // {entityName}
+    isRequired: string; // {field}
+    mustBeCharactersOrLess: string; // {field} {maxLength}
+    enter: string; // {field}
+    status: string;
+    active: string;
+    inactive: string;
+    selectStatus: string;
+    templateContent: string;
+    languageOptional: string;
+    selectLanguageOptional: string;
+    title: string;
+    textBody: string;
+    htmlBody: string;
+    variables: string;
+    variablesPlaceholder: string;
+    invalidJson: string;
+    mustBeValidNumber: string; // {field}
+    mustBeValidJsonObject: string;
+    titleOptional: string;
+    enterTemplateTitle: string;
+    characters: string; // {count}/{max}
+    textBodyOptional: string;
+    enterTextContent: string;
+    htmlBodyOptional: string;
+    enterHtmlContent: string;
+    variablesJsonFormat: string;
+    defineDefaultVariables: string;
+    validJson: string;
+    invalidJsonWarning: string;
+    selectLanguageForTemplate: string;
+    templatesWithoutLanguage: string;
   };
 
   // Profile
@@ -586,6 +625,47 @@ export interface Translations {
     deactivateServers: string;
     enableHealthChecks: string;
     disableHealthChecks: string;
+  };
+
+  // Customer Identity
+  customerIdentity: {
+    title: string;
+    description: string;
+    searchFields: string;
+    allFieldTypes: string;
+    filterByFieldType: string;
+    unableToLoadFields: string;
+    retry: string;
+    noFieldsAvailable: string;
+    noFieldsConfigured: string;
+    noMatchingFields: string;
+    tryAdjustingSearch: string;
+    id: string;
+    fieldName: string;
+    fieldValue: string;
+    fieldType: string;
+    sourceTable: string;
+    description: string;
+    actions: string;
+    viewDetails: string;
+    fieldDetails: string;
+    fieldOverview: string;
+    coreMetadata: string;
+    typeInformation: string;
+    sourceValidation: string;
+    operatorSupport: string;
+    noOperatorsConfigured: string;
+    label: string;
+    symbol: string;
+    requiresValue: string;
+    requiresTwoValues: string;
+    applicableTypes: string;
+    yes: string;
+    no: string;
+    invalidFieldIdentifier: string;
+    fieldNotFound: string;
+    unableToLoadField: string;
+    unableToLoadFieldDetails: string;
   };
 
   // Jobs

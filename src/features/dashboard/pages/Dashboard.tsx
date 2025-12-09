@@ -87,6 +87,7 @@ import JobExecutionDetailsPage from "../../jobs/pages/JobExecutionDetailsPage";
 import JobExecutionsAnalyticsPage from "../../jobs/pages/JobExecutionsAnalyticsPage";
 import NotificationsPage from "../../notifications/pages/NotificationsPage";
 import DNDManagementPage from "../../campaigns/pages/DNDManagementPage";
+import DNDChannelPage from "../../campaigns/pages/DNDChannelPage";
 import VIPListManagementPage from "../../campaigns/pages/VIPListManagementPage";
 import SeedListManagementPage from "../../campaigns/pages/SeedListManagementPage";
 
@@ -308,6 +309,7 @@ export default function Dashboard() {
         />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/dnd-management" element={<DNDManagementPage />} />
+        <Route path="/dnd-management/:channel" element={<DNDChannelPage />} />
         <Route
           path="/vip-list-management"
           element={<VIPListManagementPage />}

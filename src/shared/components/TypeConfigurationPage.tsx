@@ -13,6 +13,7 @@ import {
 import { color, tw } from "../utils/utils";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useToast } from "../../contexts/ToastContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 import { configurationDataService } from "../services/configurationDataService";
 import type { ConfigurationType } from "../services/configurationDataService";
 import type { ConfigurationItem } from "./GenericConfigurationPage";
@@ -107,6 +108,7 @@ function TypeConfigurationModal({
   const [variablesText, setVariablesText] = useState("");
   const [locale, setLocale] = useState<string>("");
   const [error, setError] = useState("");
+  const { t } = useLanguage();
 
   const isCreativeTemplate = config.configType === "creativeTemplates";
 
@@ -154,25 +156,31 @@ function TypeConfigurationModal({
     e.preventDefault();
 
     if (config.nameRequired && !name.trim()) {
-      setError(`${config.nameLabel} is required`);
+      setError(t.genericConfig.isRequired.replace("{field}", config.nameLabel));
       return;
     }
 
     if (name.length > config.nameMaxLength) {
       setError(
-        `${config.nameLabel} must be ${config.nameMaxLength} characters or less`
+        t.genericConfig.mustBeCharactersOrLess
+          .replace("{field}", config.nameLabel)
+          .replace("{maxLength}", config.nameMaxLength.toString())
       );
       return;
     }
 
     if (config.descriptionRequired && !description.trim()) {
-      setError(`${config.descriptionLabel} is required`);
+      setError(
+        t.genericConfig.isRequired.replace("{field}", config.descriptionLabel)
+      );
       return;
     }
 
     if (description && description.length > config.descriptionMaxLength) {
       setError(
-        `${config.descriptionLabel} must be ${config.descriptionMaxLength} characters or less`
+        t.genericConfig.mustBeCharactersOrLess
+          .replace("{field}", config.descriptionLabel)
+          .replace("{maxLength}", config.descriptionMaxLength.toString())
       );
       return;
     }
@@ -191,11 +199,11 @@ function TypeConfigurationModal({
         ) {
           parsedVariables = parsed;
         } else {
-          setError("Variables must be a valid JSON object");
+          setError(t.genericConfig.mustBeValidJsonObject);
           return;
         }
       } catch {
-        setError("Invalid JSON in variables field");
+        setError(t.genericConfig.invalidJson);
         return;
       }
     }
@@ -235,7 +243,12 @@ function TypeConfigurationModal({
       metadataValue !== "" &&
       Number.isNaN(payload.metadataValue)
     ) {
-      setError(`${config.metadataField.label} must be a valid number`);
+      setError(
+        t.genericConfig.mustBeValidNumber.replace(
+          "{field}",
+          config.metadataField.label
+        )
+      );
       return;
     }
 
@@ -283,7 +296,10 @@ function TypeConfigurationModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder={`Enter ${config.nameLabel.toLowerCase()}`}
+              placeholder={t.genericConfig.enter.replace(
+                "{field}",
+                config.nameLabel.toLowerCase()
+              )}
               maxLength={config.nameMaxLength}
               required={config.nameRequired}
             />
@@ -297,7 +313,10 @@ function TypeConfigurationModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder={`Enter ${config.descriptionLabel.toLowerCase()}`}
+              placeholder={t.genericConfig.enter.replace(
+                "{field}",
+                config.descriptionLabel.toLowerCase()
+              )}
               rows={3}
               maxLength={config.descriptionMaxLength}
               required={config.descriptionRequired}
@@ -324,19 +343,22 @@ function TypeConfigurationModal({
             <>
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                  Template Content
+                  {t.genericConfig.templateContent}
                 </h3>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Language (optional)
+                  {t.genericConfig.languageOptional}
                 </label>
                 <HeadlessSelect
                   value={locale}
                   onChange={(value) => setLocale(value || "")}
                   options={[
-                    { value: "", label: "Select Language (optional)" },
+                    {
+                      value: "",
+                      label: t.genericConfig.selectLanguageOptional,
+                    },
                     ...(languages as TypeConfigurationItem[])
                       .filter((lang) => lang.isActive)
                       .map((lang) => ({
@@ -344,25 +366,25 @@ function TypeConfigurationModal({
                         label: lang.name,
                       })),
                   ]}
-                  placeholder="Select Language (optional)"
+                  placeholder={t.genericConfig.selectLanguageOptional}
                   openUpward={true}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Select the language for this template. Templates without a
-                  language will be available for all languages.
+                  {t.genericConfig.selectLanguageForTemplate}{" "}
+                  {t.genericConfig.templatesWithoutLanguage}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Title (optional, max 160 characters)
+                  {t.genericConfig.titleOptional}
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter template title..."
+                  placeholder={t.genericConfig.enterTemplateTitle}
                   maxLength={160}
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -372,33 +394,33 @@ function TypeConfigurationModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Text Body (optional)
+                  {t.genericConfig.textBodyOptional}
                 </label>
                 <textarea
                   value={textBody}
                   onChange={(e) => setTextBody(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
-                  placeholder="Enter text content... Use {{variable_name}} for variables"
+                  placeholder={t.genericConfig.enterTextContent}
                   rows={6}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  HTML Body (optional, for Email/Web channels)
+                  {t.genericConfig.htmlBodyOptional}
                 </label>
                 <textarea
                   value={htmlBody}
                   onChange={(e) => setHtmlBody(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono"
-                  placeholder="Enter HTML content... Use {{variable_name}} for variables"
+                  placeholder={t.genericConfig.enterHtmlContent}
                   rows={8}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Variables (JSON format, optional)
+                  {t.genericConfig.variablesJsonFormat}
                 </label>
                 <textarea
                   value={variablesText}
@@ -408,8 +430,7 @@ function TypeConfigurationModal({
                   rows={4}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Define default variable values as JSON object. Use variables
-                  like {`{{variable_name}}`} in your content.
+                  {t.genericConfig.defineDefaultVariables}
                 </p>
                 {variablesText.trim() &&
                   (() => {
@@ -423,7 +444,7 @@ function TypeConfigurationModal({
                     } catch {
                       return (
                         <p className="text-xs text-red-600 mt-1">
-                          ⚠ Invalid JSON
+                          ⚠ {t.genericConfig.invalidJsonWarning}
                         </p>
                       );
                     }
@@ -476,6 +497,7 @@ export default function TypeConfigurationPage({
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { success: showToast, error: showError } = useToast();
+  const { t } = useLanguage();
 
   const normalizeItems = (data: TypeConfigurationItem[]) =>
     (data || []).map((item) => ({
@@ -538,8 +560,8 @@ export default function TypeConfigurationPage({
       title: config.deleteConfirmTitle,
       message: config.deleteConfirmMessage(item.name),
       type: "danger",
-      confirmText: "Delete",
-      cancelText: "Cancel",
+      confirmText: t.genericConfig.delete,
+      cancelText: t.genericConfig.cancel,
     });
 
     if (!confirmed) return;
@@ -707,7 +729,7 @@ export default function TypeConfigurationPage({
                       backgroundColor: color.surface.tableHeader,
                     }}
                   >
-                    {config.statusLabel || "Status"}
+                    {config.statusLabel || t.genericConfig.status}
                   </th>
                   <th
                     className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider"
@@ -717,7 +739,7 @@ export default function TypeConfigurationPage({
                       borderTopRightRadius: "0.375rem",
                     }}
                   >
-                    Actions
+                    {t.genericConfig.actions}
                   </th>
                 </tr>
               </thead>
@@ -751,7 +773,7 @@ export default function TypeConfigurationPage({
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <div className={`text-sm ${tw.textSecondary} max-w-md`}>
-                        {item.description || "No description"}
+                        {item.description || t.genericConfig.noDescription}
                       </div>
                     </td>
                     {config.metadataField && (
@@ -771,7 +793,9 @@ export default function TypeConfigurationPage({
                       style={{ backgroundColor: color.surface.tablebodybg }}
                     >
                       <span className={`text-sm ${tw.textPrimary}`}>
-                        {item.isActive ?? true ? "Active" : "Inactive"}
+                        {item.isActive ?? true
+                          ? t.genericConfig.active
+                          : t.genericConfig.inactive}
                       </span>
                     </td>
                     <td

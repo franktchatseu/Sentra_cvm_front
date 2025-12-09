@@ -43,12 +43,12 @@ export default function HeadlessSelect({
     : options;
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} style={{ zIndex: 99999 }}>
       <Listbox value={value} onChange={onChange} disabled={disabled}>
         <div className="relative w-full">
           <Listbox.Button
             className={`
-            relative w-full cursor-default py-3 pl-3 pr-10 text-left transition-all duration-200 text-sm
+            relative w-full cursor-default py-2 px-3 pr-10 text-left transition-all duration-200 text-sm
             ${error ? components.input.error : components.input.default}
             ${
               disabled
@@ -81,7 +81,7 @@ export default function HeadlessSelect({
             leaveTo="opacity-0"
           >
             <Listbox.Options
-              className={`absolute z-[100000] max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm ${
+              className={`absolute z-[99999] max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm ${
                 openUpward ? "bottom-full mb-1" : "top-full mt-1"
               }`}
               style={{
@@ -89,6 +89,7 @@ export default function HeadlessSelect({
                 maxWidth: "100%",
                 left: 0,
                 right: 0,
+                zIndex: 99999,
               }}
             >
               {searchable && (
