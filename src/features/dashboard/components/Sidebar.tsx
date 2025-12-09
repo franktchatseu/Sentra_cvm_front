@@ -319,7 +319,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         ],
       },
       {
-        name: "Customer Management",
+        name: "Customer 360 profile",
         href: "/dashboard/customers",
         icon: Users,
         type: "parent",
@@ -905,7 +905,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Link
               to="/landingpage"
               onClick={handleLinkClick}
-              className="w-32 h-32 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+              className="w-28 h-28 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
             >
               <img
                 src={logo}

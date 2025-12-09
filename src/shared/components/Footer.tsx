@@ -16,7 +16,7 @@ export default function Footer({ className = "" }: FooterProps) {
     >
       <div className="px-5 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-white/70 text-sm">
+          <div className="text-white text-sm">
             <p>&copy; {currentYear} Effortel. All rights reserved.</p>
           </div>
           <div className="flex items-center gap-6 text-sm">
