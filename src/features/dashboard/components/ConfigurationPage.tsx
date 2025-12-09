@@ -166,6 +166,34 @@ export default function ConfigurationPage() {
         status: "active",
         navigationPath: "/dashboard/reward-types",
       },
+      {
+        id: "sender-ids",
+        name: "Sender IDs",
+        description: "Manage SMS sender IDs for branding and compliance",
+        type: "offer",
+        category: "Offer Configuration",
+        status: "active",
+        navigationPath: "/dashboard/sender-ids",
+      },
+      {
+        id: "sms-routes",
+        name: "SMS Routes",
+        description: "Manage SMS gateway routes for message delivery",
+        type: "offer",
+        category: "Offer Configuration",
+        status: "active",
+        navigationPath: "/dashboard/sms-routes",
+      },
+      {
+        id: "languages",
+        name: "Languages",
+        description:
+          "Manage available languages and locales for offer creatives",
+        type: "offer",
+        category: "Offer Configuration",
+        status: "active",
+        navigationPath: "/dashboard/languages",
+      },
       // Product-related configs
       {
         id: "product-types",

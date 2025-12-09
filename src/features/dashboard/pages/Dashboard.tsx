@@ -34,6 +34,9 @@ import OfferCategoriesPage from "../../offers/pages/OfferCategoriesPage";
 import TrackingSourcesPage from "../../offers/pages/TrackingSourcesPage";
 import CreativeTemplatesPage from "../../offers/pages/CreativeTemplatesPage";
 import RewardTypesPage from "../../offers/pages/RewardTypesPage";
+import SenderIdsPage from "../../offers/pages/SenderIdsPage";
+import SMSRoutesPage from "../../offers/pages/SMSRoutesPage";
+import LanguagesPage from "../../offers/pages/LanguagesPage";
 // import CategoryDetailsPage from "../../offers/pages/CategoryDetailsPage";
 import UserManagementPage from "../components/UserManagementPage";
 import UserDetailsPage from "../../users/pages/UserDetailsPage";
@@ -78,6 +81,7 @@ import JobDependenciesPage from "../../jobs/pages/JobDependenciesPage";
 import JobDependenciesAnalyticsPage from "../../jobs/pages/JobDependenciesAnalyticsPage";
 import JobWorkflowStepsPage from "../../jobs/pages/JobWorkflowStepsPage";
 import JobWorkflowStepDetailsPage from "../../jobs/pages/JobWorkflowStepDetailsPage";
+import CreateJobWorkflowStepPage from "../../jobs/pages/CreateJobWorkflowStepPage";
 import JobExecutionsPage from "../../jobs/pages/JobExecutionsPage";
 import JobExecutionDetailsPage from "../../jobs/pages/JobExecutionDetailsPage";
 import JobExecutionsAnalyticsPage from "../../jobs/pages/JobExecutionsAnalyticsPage";
@@ -196,6 +200,9 @@ export default function Dashboard() {
         />
         <Route path="/creative-templates" element={<CreativeTemplatesPage />} />
         <Route path="/reward-types" element={<RewardTypesPage />} />
+        <Route path="/sender-ids" element={<SenderIdsPage />} />
+        <Route path="/sms-routes" element={<SMSRoutesPage />} />
+        <Route path="/languages" element={<LanguagesPage />} />
         <Route
           path="/communication-channels"
           element={<CommunicationChannelsPage />}
@@ -279,8 +286,16 @@ export default function Dashboard() {
         />
         <Route path="/job-workflow-steps" element={<JobWorkflowStepsPage />} />
         <Route
+          path="/job-workflow-steps/create"
+          element={<CreateJobWorkflowStepPage />}
+        />
+        <Route
           path="/job-workflow-steps/:id"
           element={<JobWorkflowStepDetailsPage />}
+        />
+        <Route
+          path="/job-workflow-steps/:id/edit"
+          element={<CreateJobWorkflowStepPage />}
         />
         <Route path="/job-executions" element={<JobExecutionsPage />} />
         <Route

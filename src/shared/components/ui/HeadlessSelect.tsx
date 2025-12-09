@@ -18,6 +18,7 @@ interface HeadlessSelectProps {
   error?: boolean;
   className?: string;
   searchable?: boolean;
+  openUpward?: boolean;
 }
 
 export default function HeadlessSelect({
@@ -29,6 +30,7 @@ export default function HeadlessSelect({
   error = false,
   className = "",
   searchable = false,
+  openUpward = false,
 }: HeadlessSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -79,7 +81,9 @@ export default function HeadlessSelect({
             leaveTo="opacity-0"
           >
             <Listbox.Options
-              className="absolute z-[100000] mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm"
+              className={`absolute z-[100000] max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg border border-gray-300 focus:outline-none sm:text-sm ${
+                openUpward ? "bottom-full mb-1" : "top-full mt-1"
+              }`}
               style={{
                 minWidth: "100%",
                 maxWidth: "100%",

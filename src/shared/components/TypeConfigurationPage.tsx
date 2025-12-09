@@ -16,6 +16,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { configurationDataService } from "../services/configurationDataService";
 import type { ConfigurationType } from "../services/configurationDataService";
 import type { ConfigurationItem } from "./GenericConfigurationPage";
+import HeadlessSelect from "./ui/HeadlessSelect";
 
 export interface TypeConfigurationItem extends ConfigurationItem {
   isActive?: boolean;
@@ -25,6 +26,8 @@ export interface TypeConfigurationItem extends ConfigurationItem {
   text_body?: string;
   html_body?: string;
   variables?: Record<string, string | number | boolean>;
+  // Locale for templates (matches language metadataValue)
+  locale?: string;
 }
 
 interface MetadataFieldConfig {
@@ -79,6 +82,7 @@ interface TypeConfigurationModalProps {
     text_body?: string;
     html_body?: string;
     variables?: Record<string, string | number | boolean>;
+    locale?: string;
   }) => Promise<void>;
   isSaving: boolean;
   config: TypeConfigurationPageConfig;
@@ -101,9 +105,15 @@ function TypeConfigurationModal({
   const [textBody, setTextBody] = useState("");
   const [htmlBody, setHtmlBody] = useState("");
   const [variablesText, setVariablesText] = useState("");
+  const [locale, setLocale] = useState<string>("");
   const [error, setError] = useState("");
 
   const isCreativeTemplate = config.configType === "creativeTemplates";
+
+  // Load languages for template locale selection
+  const languages = isCreativeTemplate
+    ? configurationDataService.getData("languages")
+    : [];
 
   useEffect(() => {
     if (item) {
@@ -120,6 +130,7 @@ function TypeConfigurationModal({
         setVariablesText(
           item.variables ? JSON.stringify(item.variables, null, 2) : ""
         );
+        setLocale(item.locale || "");
       }
     } else {
       setName("");
@@ -131,6 +142,7 @@ function TypeConfigurationModal({
         setTextBody("");
         setHtmlBody("");
         setVariablesText("");
+        setLocale("");
       }
     }
     setError("");
@@ -215,6 +227,7 @@ function TypeConfigurationModal({
       payload.text_body = textBody.trim() || undefined;
       payload.html_body = htmlBody.trim() || undefined;
       payload.variables = parsedVariables;
+      payload.locale = locale.trim() || undefined;
     }
 
     if (
@@ -313,6 +326,31 @@ function TypeConfigurationModal({
                 <h3 className="text-sm font-semibold text-gray-900 mb-4">
                   Template Content
                 </h3>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Language (optional)
+                </label>
+                <HeadlessSelect
+                  value={locale}
+                  onChange={(value) => setLocale(value || "")}
+                  options={[
+                    { value: "", label: "Select Language (optional)" },
+                    ...(languages as TypeConfigurationItem[])
+                      .filter((lang) => lang.isActive)
+                      .map((lang) => ({
+                        value: lang.metadataValue as string,
+                        label: lang.name,
+                      })),
+                  ]}
+                  placeholder="Select Language (optional)"
+                  openUpward={true}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Select the language for this template. Templates without a
+                  language will be available for all languages.
+                </p>
               </div>
 
               <div>
@@ -556,7 +594,7 @@ export default function TypeConfigurationPage({
         <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             onClick={() => navigate(config.backPath)}
-            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-2 text-gray-600 hover:text-gray-800 rounded-md transition-colors"
             aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5" />
