@@ -1,15 +1,7 @@
 // Vercel serverless function to proxy API requests
-// Note: For file uploads, we need to handle the raw body
+// Uses CommonJS for better Vercel compatibility
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-};
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   const origin = req.headers.origin;
   const allowedOrigins = [
@@ -41,74 +33,33 @@ export default async function handler(req, res) {
     const API_BASE_URL = "http://cvm.groupngs.com:8080/api/database-service";
     const targetUrl = `${API_BASE_URL}/${apiPath}`;
 
-    const contentType = req.headers["content-type"] || "";
-    const isMultipart = contentType.includes("multipart/form-data");
-
     console.log("Proxy request:", {
       method: req.method,
       apiPath,
       targetUrl,
-      contentType: contentType.substring(0, 50),
-      isMultipart,
-      bodyType: typeof req.body,
     });
 
     // Prepare headers
-    const headers = {};
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
     if (req.headers.authorization) {
       headers["Authorization"] = req.headers.authorization;
     }
 
+    // Prepare body
     let body = undefined;
-
-    if (req.method !== "GET" && req.method !== "HEAD") {
-      if (isMultipart) {
-        // For multipart, we need to forward the raw request
-        // Vercel's bodyParser doesn't handle multipart well
-        // We'll reconstruct the FormData on the server side
-        
-        // Since Vercel parses the body, we need to handle it differently
-        // The body will be parsed as an object with files
-        if (req.body) {
-          const FormData = (await import('form-data')).default;
-          const formData = new FormData();
-          
-          // Handle the parsed body
-          for (const [key, value] of Object.entries(req.body)) {
-            if (value && typeof value === 'object' && value.filepath) {
-              // This is a file
-              const fs = await import('fs');
-              formData.append(key, fs.createReadStream(value.filepath), {
-                filename: value.originalFilename || value.newFilename,
-                contentType: value.mimetype,
-              });
-            } else {
-              formData.append(key, value);
-            }
-          }
-          
-          body = formData;
-          Object.assign(headers, formData.getHeaders());
-        }
-      } else {
-        headers["Content-Type"] = "application/json";
-        if (req.body) {
-          body = JSON.stringify(req.body);
-        }
-      }
+    if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
+      body = JSON.stringify(req.body);
     }
 
     // Forward the request
-    const fetchOptions = {
+    const response = await fetch(targetUrl, {
       method: req.method,
       headers,
-    };
-    
-    if (body) {
-      fetchOptions.body = body;
-    }
-
-    const response = await fetch(targetUrl, fetchOptions);
+      body,
+    });
 
     // Handle response
     let data;
@@ -132,7 +83,6 @@ export default async function handler(req, res) {
     res.status(500).json({
       error: "Proxy request failed",
       message: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
-}
+};

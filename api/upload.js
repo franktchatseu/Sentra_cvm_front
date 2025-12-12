@@ -1,17 +1,11 @@
 // Vercel serverless function for file uploads
-// This handles multipart/form-data requests separately from the main proxy
+// Uses CommonJS for better Vercel compatibility
 
-import formidable from 'formidable';
-import fs from 'fs';
-import FormData from 'form-data';
+const formidable = require('formidable');
+const fs = require('fs');
+const FormData = require('form-data');
 
-export const config = {
-  api: {
-    bodyParser: false, // Disable body parsing to handle multipart
-  },
-};
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   const origin = req.headers.origin;
   res.setHeader("Access-Control-Allow-Origin", origin || "*");
@@ -87,6 +81,8 @@ export default async function handler(req, res) {
       headers["Authorization"] = req.headers.authorization;
     }
 
+    console.log("Forwarding to:", targetUrl);
+
     // Forward to backend
     const response = await fetch(targetUrl, {
       method: "POST",
@@ -102,6 +98,8 @@ export default async function handler(req, res) {
       data = responseText;
     }
 
+    console.log("Backend response status:", response.status);
+
     res.status(response.status);
     if (typeof data === "string") {
       res.send(data);
@@ -115,4 +113,10 @@ export default async function handler(req, res) {
       message: error.message,
     });
   }
-}
+};
+
+module.exports.config = {
+  api: {
+    bodyParser: false,
+  },
+};
