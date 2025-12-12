@@ -1,11 +1,19 @@
 // Vercel serverless function to proxy API requests
+// Supports both JSON and multipart/form-data (file uploads)
+
+export const config = {
+  api: {
+    bodyParser: false, // Disable body parsing to handle raw body for file uploads
+  },
+};
+
 export default async function handler(req, res) {
   // Enable CORS with more specific headers
   const origin = req.headers.origin;
   const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://sentra-wheat.vercel.app", // Replace with your actual Vercel domain
+    "https://sentra-wheat.vercel.app",
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
   ].filter(Boolean);
 
@@ -25,7 +33,7 @@ export default async function handler(req, res) {
     "Content-Type, Authorization, X-Requested-With, Accept, Origin"
   );
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
+  res.setHeader("Access-Control-Max-Age", "86400");
 
   // Handle preflight requests
   if (req.method === "OPTIONS") {
@@ -37,34 +45,43 @@ export default async function handler(req, res) {
     const { path } = req.query;
     const apiPath = Array.isArray(path) ? path.join("/") : path || "";
 
-    // Construct the target URL
-    // Use environment variable or default to localhost
     const API_BASE_URL = "http://cvm.groupngs.com:8080/api/database-service";
-    
-    // Log for debugging in production
+    const targetUrl = `${API_BASE_URL}/${apiPath}`;
+
     console.log("Proxy request:", {
       method: req.method,
       apiPath,
-      targetUrl: `${API_BASE_URL}/${apiPath}`,
-      hasApiBaseUrl: !!process.env.API_BASE_URL,
+      targetUrl,
+      contentType: req.headers["content-type"],
     });
-    
-    const targetUrl = `${API_BASE_URL}/${apiPath}`;
+
+    // Check if this is a multipart/form-data request (file upload)
+    const contentType = req.headers["content-type"] || "";
+    const isMultipart = contentType.includes("multipart/form-data");
 
     // Prepare headers for the backend request
-    const headers = {
-      "Content-Type": "application/json",
-    };
+    const headers = {};
 
     // Forward authorization header if present
     if (req.headers.authorization) {
       headers["Authorization"] = req.headers.authorization;
     }
 
-    // Prepare request body
     let body = undefined;
+
     if (req.method !== "GET" && req.method !== "HEAD") {
-      body = JSON.stringify(req.body);
+      if (isMultipart) {
+        // For multipart requests, forward the raw body and content-type
+        headers["Content-Type"] = contentType;
+        body = await getRawBody(req);
+      } else {
+        // For JSON requests, parse and stringify
+        headers["Content-Type"] = "application/json";
+        const jsonBody = await getJsonBody(req);
+        if (jsonBody) {
+          body = JSON.stringify(jsonBody);
+        }
+      }
     }
 
     // Forward the request
@@ -76,9 +93,9 @@ export default async function handler(req, res) {
 
     // Handle different response types
     let data;
-    const contentType = response.headers.get("content-type");
+    const responseContentType = response.headers.get("content-type");
 
-    if (contentType && contentType.includes("application/json")) {
+    if (responseContentType && responseContentType.includes("application/json")) {
       data = await response.json();
     } else {
       data = await response.text();
@@ -97,8 +114,39 @@ export default async function handler(req, res) {
     res.status(500).json({
       error: "Proxy request failed",
       message: error.message,
-      apiBaseUrlConfigured: !!process.env.API_BASE_URL,
       details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
+}
+
+// Helper function to get raw body for multipart requests
+async function getRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(chunk));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
+// Helper function to get JSON body
+async function getJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+    req.on("end", () => {
+      if (body) {
+        try {
+          resolve(JSON.parse(body));
+        } catch (e) {
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+    req.on("error", reject);
+  });
 }
