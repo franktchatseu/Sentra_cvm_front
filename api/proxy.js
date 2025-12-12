@@ -1,31 +1,32 @@
 // Vercel serverless function to proxy API requests
+// Note: For file uploads, we need to handle the raw body
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
-  // Enable CORS with more specific headers
+  // Enable CORS
   const origin = req.headers.origin;
   const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://sentra-wheat.vercel.app", // Replace with your actual Vercel domain
+    "https://sentra-wheat.vercel.app",
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
   ].filter(Boolean);
 
-  if (
-    allowedOrigins.includes(origin) ||
-    process.env.NODE_ENV === "development"
-  ) {
+  if (allowedOrigins.includes(origin) || process.env.NODE_ENV === "development") {
     res.setHeader("Access-Control-Allow-Origin", origin || "*");
   }
 
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Requested-With, Accept, Origin"
-  );
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
+  res.setHeader("Access-Control-Max-Age", "86400");
 
   // Handle preflight requests
   if (req.method === "OPTIONS") {
@@ -37,54 +38,88 @@ export default async function handler(req, res) {
     const { path } = req.query;
     const apiPath = Array.isArray(path) ? path.join("/") : path || "";
 
-    // Construct the target URL
-    // Use environment variable or default to localhost
     const API_BASE_URL = "http://cvm.groupngs.com:8080/api/database-service";
-    
-    // Log for debugging in production
+    const targetUrl = `${API_BASE_URL}/${apiPath}`;
+
+    const contentType = req.headers["content-type"] || "";
+    const isMultipart = contentType.includes("multipart/form-data");
+
     console.log("Proxy request:", {
       method: req.method,
       apiPath,
-      targetUrl: `${API_BASE_URL}/${apiPath}`,
-      hasApiBaseUrl: !!process.env.API_BASE_URL,
+      targetUrl,
+      contentType: contentType.substring(0, 50),
+      isMultipart,
+      bodyType: typeof req.body,
     });
-    
-    const targetUrl = `${API_BASE_URL}/${apiPath}`;
 
-    // Prepare headers for the backend request
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    // Forward authorization header if present
+    // Prepare headers
+    const headers = {};
     if (req.headers.authorization) {
       headers["Authorization"] = req.headers.authorization;
     }
 
-    // Prepare request body
     let body = undefined;
+
     if (req.method !== "GET" && req.method !== "HEAD") {
-      body = JSON.stringify(req.body);
+      if (isMultipart) {
+        // For multipart, we need to forward the raw request
+        // Vercel's bodyParser doesn't handle multipart well
+        // We'll reconstruct the FormData on the server side
+        
+        // Since Vercel parses the body, we need to handle it differently
+        // The body will be parsed as an object with files
+        if (req.body) {
+          const FormData = (await import('form-data')).default;
+          const formData = new FormData();
+          
+          // Handle the parsed body
+          for (const [key, value] of Object.entries(req.body)) {
+            if (value && typeof value === 'object' && value.filepath) {
+              // This is a file
+              const fs = await import('fs');
+              formData.append(key, fs.createReadStream(value.filepath), {
+                filename: value.originalFilename || value.newFilename,
+                contentType: value.mimetype,
+              });
+            } else {
+              formData.append(key, value);
+            }
+          }
+          
+          body = formData;
+          Object.assign(headers, formData.getHeaders());
+        }
+      } else {
+        headers["Content-Type"] = "application/json";
+        if (req.body) {
+          body = JSON.stringify(req.body);
+        }
+      }
     }
 
     // Forward the request
-    const response = await fetch(targetUrl, {
+    const fetchOptions = {
       method: req.method,
       headers,
-      body,
-    });
+    };
+    
+    if (body) {
+      fetchOptions.body = body;
+    }
 
-    // Handle different response types
+    const response = await fetch(targetUrl, fetchOptions);
+
+    // Handle response
     let data;
-    const contentType = response.headers.get("content-type");
+    const responseContentType = response.headers.get("content-type");
 
-    if (contentType && contentType.includes("application/json")) {
+    if (responseContentType && responseContentType.includes("application/json")) {
       data = await response.json();
     } else {
       data = await response.text();
     }
 
-    // Forward response status and data
     res.status(response.status);
 
     if (typeof data === "string") {
@@ -97,8 +132,7 @@ export default async function handler(req, res) {
     res.status(500).json({
       error: "Proxy request failed",
       message: error.message,
-      apiBaseUrlConfigured: !!process.env.API_BASE_URL,
-      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 }

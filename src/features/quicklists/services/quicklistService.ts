@@ -148,7 +148,11 @@ class QuickListService {
       formData.append("created_by", request.created_by);
     }
 
-    const url = `${BASE_URL}`;
+    // Use dedicated upload endpoint for file uploads in production
+    // The main proxy doesn't handle multipart/form-data well
+    const isProduction = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+    const url = isProduction ? "/api/upload?endpoint=quicklists" : BASE_URL;
+    
     const response = await fetch(url, {
       method: "POST",
       body: formData,
