@@ -1,24 +1,31 @@
 // Vercel serverless function to proxy API requests
-// Uses CommonJS for better Vercel compatibility
-
-module.exports = async function handler(req, res) {
-  // Enable CORS
+export default async function handler(req, res) {
+  // Enable CORS with more specific headers
   const origin = req.headers.origin;
   const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://sentra-wheat.vercel.app",
+    "https://sentra-wheat.vercel.app", // Replace with your actual Vercel domain
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
   ].filter(Boolean);
 
-  if (allowedOrigins.includes(origin) || process.env.NODE_ENV === "development") {
+  if (
+    allowedOrigins.includes(origin) ||
+    process.env.NODE_ENV === "development"
+  ) {
     res.setHeader("Access-Control-Allow-Origin", origin || "*");
   }
 
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+  );
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Max-Age", "86400");
+  res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
 
   // Handle preflight requests
   if (req.method === "OPTIONS") {
@@ -30,27 +37,33 @@ module.exports = async function handler(req, res) {
     const { path } = req.query;
     const apiPath = Array.isArray(path) ? path.join("/") : path || "";
 
+    // Construct the target URL
+    // Use environment variable or default to localhost
     const API_BASE_URL = "http://cvm.groupngs.com:8080/api/database-service";
-    const targetUrl = `${API_BASE_URL}/${apiPath}`;
-
+    
+    // Log for debugging in production
     console.log("Proxy request:", {
       method: req.method,
       apiPath,
-      targetUrl,
+      targetUrl: `${API_BASE_URL}/${apiPath}`,
+      hasApiBaseUrl: !!process.env.API_BASE_URL,
     });
+    
+    const targetUrl = `${API_BASE_URL}/${apiPath}`;
 
-    // Prepare headers
+    // Prepare headers for the backend request
     const headers = {
       "Content-Type": "application/json",
     };
 
+    // Forward authorization header if present
     if (req.headers.authorization) {
       headers["Authorization"] = req.headers.authorization;
     }
 
-    // Prepare body
+    // Prepare request body
     let body = undefined;
-    if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
+    if (req.method !== "GET" && req.method !== "HEAD") {
       body = JSON.stringify(req.body);
     }
 
@@ -61,16 +74,17 @@ module.exports = async function handler(req, res) {
       body,
     });
 
-    // Handle response
+    // Handle different response types
     let data;
-    const responseContentType = response.headers.get("content-type");
+    const contentType = response.headers.get("content-type");
 
-    if (responseContentType && responseContentType.includes("application/json")) {
+    if (contentType && contentType.includes("application/json")) {
       data = await response.json();
     } else {
       data = await response.text();
     }
 
+    // Forward response status and data
     res.status(response.status);
 
     if (typeof data === "string") {
@@ -83,6 +97,8 @@ module.exports = async function handler(req, res) {
     res.status(500).json({
       error: "Proxy request failed",
       message: error.message,
+      apiBaseUrlConfigured: !!process.env.API_BASE_URL,
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
-};
+}

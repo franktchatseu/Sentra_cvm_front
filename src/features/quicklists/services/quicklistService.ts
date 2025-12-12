@@ -18,6 +18,9 @@ import {
 
 const BASE_URL = `${API_CONFIG.BASE_URL}/quicklists`;
 
+// Direct backend URL for file uploads (bypasses proxy which doesn't handle multipart/form-data)
+const DIRECT_BACKEND_URL = "http://cvm.groupngs.com:8080/api/database-service/quicklists";
+
 class QuickListService {
   private async request<T>(
     endpoint: string,
@@ -148,11 +151,9 @@ class QuickListService {
       formData.append("created_by", request.created_by);
     }
 
-    // Use dedicated upload endpoint for file uploads in production
-    // The main proxy doesn't handle multipart/form-data well
-    const isProduction = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-    const url = isProduction ? "/api/upload?endpoint=quicklists" : BASE_URL;
-    
+    // Use direct backend URL for file uploads to bypass proxy
+    // The Vercel proxy doesn't handle multipart/form-data correctly
+    const url = DIRECT_BACKEND_URL;
     const response = await fetch(url, {
       method: "POST",
       body: formData,
