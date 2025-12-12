@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import { Mail, MessageSquare, Phone, Bell, AlertCircle } from "lucide-react";
+import { useState, useRef } from "react";
+import { Mail, MessageSquare, Phone, Bell, AlertCircle, Variable } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { ManualBroadcastData } from "../pages/CreateManualBroadcastPage";
-import MessageEditor from "../../communications/components/MessageEditor";
 import PreviewPanel from "../../communications/components/PreviewPanel";
-import { quicklistService } from "../../quicklists/services/quicklistService";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import HierarchicalVariableSelector from "./HierarchicalVariableSelector";
+import type { TemplateVariable } from "../types";
+import { insertVariableAtCursor, formatVariablePlaceholder } from "../utils/variableInsertion";
 
 interface DefineCommunicationStepProps {
   data: ManualBroadcastData;
@@ -56,40 +57,16 @@ export default function DefineCommunicationStep({
   const [messageBody, setMessageBody] = useState(data.messageBody || "");
   const [isRichText, setIsRichText] = useState(data.isRichText || false);
   const [error, setError] = useState("");
-  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
-
-  useEffect(() => {
-    loadAvailableColumns();
-  }, []);
-
-  const loadAvailableColumns = async () => {
-    if (!data.uploadType) return;
-
-    try {
-      const response = await quicklistService.getUploadTypes({
-        activeOnly: true,
-      });
-      if (response.success) {
-        const uploadType = response.data?.find(
-          (t) => t.upload_type === data.uploadType
-        );
-        if (uploadType && uploadType.expected_columns) {
-          let columns: string[] = [];
-          if (Array.isArray(uploadType.expected_columns)) {
-            columns = uploadType.expected_columns;
-          } else if (
-            typeof uploadType.expected_columns === "object" &&
-            uploadType.expected_columns !== null
-          ) {
-            columns = Object.keys(uploadType.expected_columns);
-          }
-          setAvailableColumns(columns);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load available columns:", err);
-    }
-  };
+  const [showVariableSelector, setShowVariableSelector] = useState(false);
+  const [activeField, setActiveField] = useState<"title" | "body">("body");
+  const [cursorPosition, setCursorPosition] = useState<number>(0);
+  const [selectedVariables, setSelectedVariables] = useState<TemplateVariable[]>(
+    data.selectedVariables || []
+  );
+  
+  // Refs for textarea/input elements
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleChannelSelect = (channel: Channel) => {
     setSelectedChannel(channel);
@@ -97,6 +74,152 @@ export default function DefineCommunicationStep({
 
   const handleToggleRichText = () => {
     setIsRichText(!isRichText);
+  };
+
+  /**
+   * Handles variable selection from the HierarchicalVariableSelector.
+   * Inserts the variable at the current cursor position in the active field.
+   * Requirements: 3.1, 3.2, 3.3
+   */
+  const handleVariableSelect = (variable: TemplateVariable) => {
+    // Track selected variables for state persistence
+    if (!selectedVariables.find((v) => v.id === variable.id)) {
+      setSelectedVariables((prev) => [...prev, variable]);
+    }
+
+    if (activeField === "title") {
+      const result = insertVariableAtCursor(messageTitle, cursorPosition, variable);
+      setMessageTitle(result.newText);
+      // Update cursor position after insertion
+      setTimeout(() => {
+        if (titleInputRef.current) {
+          titleInputRef.current.setSelectionRange(result.newCursorPosition, result.newCursorPosition);
+          titleInputRef.current.focus();
+        }
+      }, 0);
+    } else {
+      if (isRichText) {
+        // For rich text, append at the end
+        const placeholder = formatVariablePlaceholder(variable);
+        setMessageBody(messageBody + " " + placeholder + " ");
+      } else {
+        const result = insertVariableAtCursor(messageBody, cursorPosition, variable);
+        setMessageBody(result.newText);
+        // Update cursor position after insertion
+        setTimeout(() => {
+          if (bodyTextareaRef.current) {
+            bodyTextareaRef.current.setSelectionRange(result.newCursorPosition, result.newCursorPosition);
+            bodyTextareaRef.current.focus();
+          }
+        }, 0);
+      }
+    }
+
+    // Close the variable selector after selection
+    setShowVariableSelector(false);
+  };
+
+  /**
+   * Calculates character count and SMS segments for SMS/WhatsApp messages.
+   * Requirements: 4.3
+   */
+  const getCharacterInfo = () => {
+    const charCount = messageBody.length;
+    // GSM-7 encoding: 160 chars per segment, or 153 for concatenated
+    // Unicode: 70 chars per segment, or 67 for concatenated
+    const isUnicode = /[^\x00-\x7F]/.test(messageBody);
+    const singleSegmentLimit = isUnicode ? 70 : 160;
+    const multiSegmentLimit = isUnicode ? 67 : 153;
+    
+    let segments = 1;
+    if (charCount > singleSegmentLimit) {
+      segments = Math.ceil(charCount / multiSegmentLimit);
+    }
+    
+    return { charCount, segments, isUnicode };
+  };
+
+  /**
+   * Generates sample data for preview based on selected variables and uploaded file data.
+   * Uses first row of uploaded file or mock data for demonstration.
+   * Requirements: 4.5
+   */
+  const getSampleDataForPreview = (): Record<string, string> => {
+    const sampleData: Record<string, string> = {};
+    
+    // If we have sample data from the uploaded file, use it
+    if (data.fileColumns && data.fileColumns.length > 0) {
+      // Create sample data from file columns
+      data.fileColumns.forEach((col) => {
+        sampleData[col] = `[${col}]`;
+      });
+    }
+    
+    // Add sample data for selected template variables
+    selectedVariables.forEach((variable) => {
+      const key = `${variable.sourceName.toLowerCase().replace(/\s+/g, "_")}.${variable.value}`;
+      // Generate realistic sample data based on field type
+      switch (variable.fieldType) {
+        case "text":
+          if (variable.value.includes("name")) {
+            sampleData[key] = "John Doe";
+          } else if (variable.value.includes("email")) {
+            sampleData[key] = "john.doe@example.com";
+          } else if (variable.value.includes("phone")) {
+            sampleData[key] = "+1234567890";
+          } else {
+            sampleData[key] = `Sample ${variable.name}`;
+          }
+          break;
+        case "numeric":
+          sampleData[key] = "12345";
+          break;
+        case "date":
+          sampleData[key] = new Date().toLocaleDateString();
+          break;
+        case "boolean":
+          sampleData[key] = "Yes";
+          break;
+        default:
+          sampleData[key] = `[${variable.name}]`;
+      }
+    });
+    
+    return sampleData;
+  };
+
+  /**
+   * Renders text with highlighted variable placeholders.
+   * Variables are displayed with a distinct background color.
+   * Requirements: 4.4
+   */
+  const renderHighlightedText = (text: string): React.ReactNode => {
+    if (!text) return null;
+    
+    // Regex to match variable placeholders like {{source.field}}
+    const variableRegex = /(\{\{[^}]+\}\})/g;
+    const parts = text.split(variableRegex);
+    
+    return parts.map((part, index) => {
+      if (variableRegex.test(part)) {
+        // Reset regex lastIndex after test
+        variableRegex.lastIndex = 0;
+        return (
+          <span
+            key={index}
+            className="rounded px-0.5"
+            style={{
+              backgroundColor: `${color.primary.accent}25`,
+              color: color.primary.accent,
+              fontWeight: 500,
+            }}
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
   };
 
   const handleNext = () => {
@@ -113,12 +236,13 @@ export default function DefineCommunicationStep({
 
     setError("");
 
-    // Update data
+    // Update data including selected variables for state persistence
     onUpdate({
       channel: selectedChannel,
       messageTitle: messageTitle.trim(),
       messageBody: messageBody.trim(),
       isRichText: isRichText,
+      selectedVariables: selectedVariables,
     });
 
     // Move to next step
@@ -213,18 +337,175 @@ export default function DefineCommunicationStep({
               </div>
             </div>
 
-            {/* Message Editor */}
-            <div>
-              <MessageEditor
-                title={messageTitle}
-                body={messageBody}
-                channel={selectedChannel}
-                availableVariables={availableColumns}
-                onTitleChange={setMessageTitle}
-                onBodyChange={setMessageBody}
-                isRichText={isRichText}
-                onToggleRichText={handleToggleRichText}
-              />
+            {/* Message Editor with Hierarchical Variable Selector */}
+            <div className="space-y-4">
+              {/* Header with Variable Selector Toggle */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <label className={`text-sm font-medium ${tw.textPrimary}`}>
+                  {t.manualBroadcast.defineCommunicationTitle}
+                </label>
+                <div className="flex items-center gap-2">
+                  {/* Rich Text Toggle for Email */}
+                  {selectedChannel === "EMAIL" && (
+                    <button
+                      type="button"
+                      onClick={handleToggleRichText}
+                      className="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap"
+                      style={{
+                        backgroundColor: isRichText ? `${color.primary.accent}15` : "white",
+                        borderColor: isRichText ? color.primary.accent : "#D1D5DB",
+                        color: isRichText ? color.primary.accent : "#6B7280",
+                      }}
+                    >
+                      <span>{isRichText ? "Rich Text" : "Plain Text"}</span>
+                    </button>
+                  )}
+                  {/* Variable Selector Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowVariableSelector(!showVariableSelector)}
+                    className="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap"
+                    style={{
+                      backgroundColor: showVariableSelector ? `${color.primary.accent}15` : "white",
+                      borderColor: showVariableSelector ? color.primary.accent : "#D1D5DB",
+                      color: showVariableSelector ? color.primary.accent : "#6B7280",
+                    }}
+                  >
+                    <Variable className="w-4 h-4" />
+                    <span className="hidden sm:inline">Insert Variable</span>
+                    <span className="sm:hidden">Variables</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Hierarchical Variable Selector Panel */}
+              {showVariableSelector && (
+                <div className="mb-4">
+                  <HierarchicalVariableSelector
+                    onVariableSelect={handleVariableSelect}
+                    className="max-h-64 overflow-y-auto"
+                  />
+                </div>
+              )}
+
+              {/* Subject Line for Email */}
+              {selectedChannel === "EMAIL" && (
+                <div>
+                  <label className={`text-sm font-medium ${tw.textPrimary} mb-2 block`}>
+                    Subject Line <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    ref={titleInputRef}
+                    type="text"
+                    value={messageTitle}
+                    onChange={(e) => {
+                      setMessageTitle(e.target.value);
+                      setCursorPosition(e.target.selectionStart || 0);
+                    }}
+                    onClick={(e) => {
+                      setActiveField("title");
+                      setCursorPosition(e.currentTarget.selectionStart || 0);
+                    }}
+                    onKeyUp={(e) => setCursorPosition(e.currentTarget.selectionStart || 0)}
+                    onFocus={(e) => {
+                      setActiveField("title");
+                      setCursorPosition(e.currentTarget.selectionStart || 0);
+                    }}
+                    placeholder="Enter email subject..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-all"
+                    style={{ 
+                      "--tw-ring-color": `${color.primary.accent}40`,
+                    } as React.CSSProperties}
+                  />
+                </div>
+              )}
+
+              {/* Message Body with Variable Highlighting - Requirements: 4.4 */}
+              <div>
+                <label className={`text-sm font-medium ${tw.textPrimary} mb-2 block`}>
+                  Message Body <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  {/* Highlighted Preview Overlay */}
+                  <div 
+                    className="absolute inset-0 px-4 py-3 pointer-events-none overflow-hidden font-mono text-sm whitespace-pre-wrap break-words"
+                    style={{ 
+                      color: "transparent",
+                      zIndex: 1,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {renderHighlightedText(messageBody)}
+                  </div>
+                  {/* Actual Textarea */}
+                  <textarea
+                    ref={bodyTextareaRef}
+                    value={messageBody}
+                    onChange={(e) => {
+                      setMessageBody(e.target.value);
+                      setCursorPosition(e.target.selectionStart || 0);
+                    }}
+                    onClick={(e) => {
+                      setActiveField("body");
+                      setCursorPosition(e.currentTarget.selectionStart || 0);
+                    }}
+                    onKeyUp={(e) => setCursorPosition(e.currentTarget.selectionStart || 0)}
+                    onFocus={(e) => {
+                      setActiveField("body");
+                      setCursorPosition(e.currentTarget.selectionStart || 0);
+                    }}
+                    placeholder="Enter your message... Use the Variable button to insert dynamic content."
+                    rows={8}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-all font-mono text-sm resize-none"
+                    style={{ 
+                      "--tw-ring-color": `${color.primary.accent}40`,
+                      background: "transparent",
+                      position: "relative",
+                      zIndex: 2,
+                      caretColor: color.text.primary,
+                    } as React.CSSProperties}
+                  />
+                </div>
+                
+                {/* Variable Tags Display - Shows inserted variables as chips */}
+                {selectedVariables.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    <span className="text-xs text-gray-500 mr-1">Variables used:</span>
+                    {selectedVariables.map((variable) => (
+                      <span
+                        key={variable.id}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                        style={{
+                          backgroundColor: `${color.primary.accent}15`,
+                          color: color.primary.accent,
+                          border: `1px solid ${color.primary.accent}30`,
+                        }}
+                      >
+                        {variable.sourceName}.{variable.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Character Count for SMS/WhatsApp - Requirements: 4.3 */}
+                {(selectedChannel === "SMS" || selectedChannel === "WHATSAPP") && (
+                  <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                    <span>
+                      Character count: {getCharacterInfo().charCount}
+                      {getCharacterInfo().isUnicode && " (Unicode)"}
+                    </span>
+                    <span>
+                      SMS Segments: {getCharacterInfo().segments}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedChannel === "EMAIL" && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    Variables will be replaced with actual customer data when sent
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -235,7 +516,7 @@ export default function DefineCommunicationStep({
                 channel={selectedChannel}
                 title={messageTitle}
                 body={messageBody}
-                sampleData={{}}
+                sampleData={getSampleDataForPreview()}
               />
             </div>
           </div>

@@ -611,6 +611,25 @@ export interface Translations {
     errorSelectTime: string;
     errorFutureDateTime: string;
     errorCreateBroadcast: string;
+    // Subscription ID Selector
+    subscriptionIdLabel: string;
+    subscriptionIdHelper: string;
+    subscriptionIdPlaceholder: string;
+    uploadFileFirst: string;
+    errorSelectSubscriptionId: string;
+    parsingFile: string;
+    fileParseError: string;
+    // Hierarchical Variable Selector
+    selectProfileSource: string;
+    selectField: string;
+    searchFields: string;
+    noSourcesAvailable: string;
+    noFieldsAvailable: string;
+    noFieldsMatchSearch: string;
+    fieldSingular: string;
+    fieldPlural: string;
+    errorLoadingFields: string;
+    variableInserted: string;
   };
 
   // Servers

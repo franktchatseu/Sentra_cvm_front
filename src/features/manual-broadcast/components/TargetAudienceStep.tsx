@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
-import { Upload, Edit3, FileText, AlertCircle } from "lucide-react";
+import { Upload, Edit3, FileText, AlertCircle, Loader2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { color, tw } from "../../../shared/utils/utils";
 import { useToast } from "../../../contexts/ToastContext";
@@ -8,6 +8,8 @@ import { quicklistService } from "../../quicklists/services/quicklistService";
 import { UploadType } from "../../quicklists/types/quicklist";
 import { ManualBroadcastData } from "../pages/CreateManualBroadcastPage";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import { parseFileColumns } from "../utils/fileParser";
+import SubscriptionIdSelector from "./SubscriptionIdSelector";
 
 interface TargetAudienceStepProps {
   data: ManualBroadcastData;
@@ -24,7 +26,7 @@ export default function TargetAudienceStep({
 }: TargetAudienceStepProps) {
   const { t } = useLanguage();
   const { error: showError } = useToast();
-  const [inputMode, setInputMode] = useState<InputMode>("file");
+  const [inputMode, setInputMode] = useState<InputMode>(data.inputMethod || "file");
   const [file, setFile] = useState<File | null>(data.audienceFile || null);
   const [uploadType, setUploadType] = useState<string>(data.uploadType || "");
   const [name, setName] = useState(data.audienceName || "");
@@ -35,6 +37,14 @@ export default function TargetAudienceStep({
   const [uploadTypes, setUploadTypes] = useState<UploadType[]>([]);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // New state for file columns and subscription ID selection
+  const [fileColumns, setFileColumns] = useState<string[]>(data.fileColumns || []);
+  const [subscriptionIdColumn, setSubscriptionIdColumn] = useState<string | null>(
+    data.subscriptionIdColumn || null
+  );
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [subscriptionIdError, setSubscriptionIdError] = useState(false);
 
   useEffect(() => {
     loadUploadTypes();
@@ -62,7 +72,7 @@ export default function TargetAudienceStep({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       // Validate file type
@@ -103,6 +113,28 @@ export default function TargetAudienceStep({
         setName(filename);
       }
       setError("");
+      
+      // Parse file columns for Subscription ID selection
+      setIsParsingFile(true);
+      setSubscriptionIdError(false);
+      try {
+        const parseResult = await parseFileColumns(selectedFile);
+        if (parseResult.success && parseResult.columns.length > 0) {
+          setFileColumns(parseResult.columns);
+          // Reset subscription ID selection when new file is uploaded
+          setSubscriptionIdColumn(null);
+        } else {
+          setFileColumns([]);
+          if (parseResult.error) {
+            showError(parseResult.error);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse file columns:", err);
+        setFileColumns([]);
+      } finally {
+        setIsParsingFile(false);
+      }
     }
   };
 
@@ -203,10 +235,19 @@ export default function TargetAudienceStep({
   };
 
   const handleNext = async () => {
+    // Reset errors
+    setSubscriptionIdError(false);
+    
     // Validation
     if (inputMode === "file") {
       if (!file) {
         setError(t.manualBroadcast.errorSelectFile);
+        return;
+      }
+      // Validate Subscription ID selection for file mode (Requirements 1.3, 1.4)
+      if (fileColumns.length > 0 && !subscriptionIdColumn) {
+        setError(t.manualBroadcast.errorSelectSubscriptionId);
+        setSubscriptionIdError(true);
         return;
       }
     } else {
@@ -261,6 +302,10 @@ export default function TargetAudienceStep({
         uploadType: uploadType,
         quicklistId: response.data.quicklist_id,
         rowCount: response.data.rows_imported,
+        // New fields for enhanced audience selection
+        subscriptionIdColumn: inputMode === "file" ? subscriptionIdColumn || undefined : undefined,
+        fileColumns: inputMode === "file" ? fileColumns : undefined,
+        inputMethod: inputMode,
       });
 
       // Move to next step
@@ -562,6 +607,34 @@ export default function TargetAudienceStep({
                 </div>
               </div>
             )}
+            
+            {/* Subscription ID Selector - shown after file is uploaded and parsed */}
+            {file && !isParsingFile && fileColumns.length > 0 && (
+              <div className="mt-4">
+                <SubscriptionIdSelector
+                  fileColumns={fileColumns}
+                  selectedColumn={subscriptionIdColumn}
+                  onColumnSelect={(column) => {
+                    setSubscriptionIdColumn(column);
+                    setSubscriptionIdError(false);
+                    setError("");
+                  }}
+                  disabled={isSubmitting}
+                  error={subscriptionIdError}
+                  errorMessage={t.manualBroadcast.errorSelectSubscriptionId}
+                />
+              </div>
+            )}
+            
+            {/* Parsing indicator */}
+            {isParsingFile && (
+              <div className="mt-4 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" style={{ color: color.primary.action }} />
+                <span className={`text-sm ${tw.textSecondary}`}>
+                  {t.manualBroadcast.parsingFile || "Parsing file..."}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -659,9 +732,11 @@ export default function TargetAudienceStep({
           onClick={handleNext}
           disabled={
             isSubmitting ||
+            isParsingFile ||
             !uploadType ||
             !name.trim() ||
             (inputMode === "file" && !file) ||
+            (inputMode === "file" && fileColumns.length > 0 && !subscriptionIdColumn) ||
             (inputMode === "manual" && manualInputValidation.validCount === 0)
           }
           className="px-6 py-2.5 text-white rounded-md transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"

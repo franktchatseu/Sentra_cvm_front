@@ -617,13 +617,6 @@ export default function QuickListsPage() {
                     >
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => handleCommunicate(quicklist)}
-                          className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
-                          title="Send Communication"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
-                        <button
                           onClick={() => handleEdit(quicklist)}
                           className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
                           title="Edit"

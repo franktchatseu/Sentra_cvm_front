@@ -11,6 +11,7 @@ import TargetAudienceStep from "../components/TargetAudienceStep";
 import DefineCommunicationStep from "../components/DefineCommunicationStep";
 import TestBroadcastStep from "../components/TestBroadcastStep";
 import ScheduleStep from "../components/ScheduleStep";
+import type { TemplateVariable, AudienceInputMethod } from "../types";
 
 export interface ManualBroadcastData {
   // Step 1: Audience
@@ -20,12 +21,18 @@ export interface ManualBroadcastData {
   uploadType?: string;
   quicklistId?: number;
   rowCount?: number;
+  // New fields for enhanced audience selection
+  subscriptionIdColumn?: string;   // Selected column containing Subscription IDs
+  fileColumns?: string[];          // Columns extracted from uploaded file
+  inputMethod?: AudienceInputMethod; // "file" or "manual" input method
 
   // Step 2: Communication
   channel?: "EMAIL" | "SMS" | "WHATSAPP" | "PUSH";
   messageTitle?: string;
   messageBody?: string;
   isRichText?: boolean;
+  // New field for template variables
+  selectedVariables?: TemplateVariable[];  // Variables used in the message
 
   // Step 3: Test
   testContacts?: string[];

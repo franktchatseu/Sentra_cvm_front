@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { color, tw } from "../../../shared/utils/utils";
 import { ManualBroadcastData } from "../pages/CreateManualBroadcastPage";
-import { communicationService } from "../../communications/services/communicationService";
 import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface TestBroadcastStepProps {
@@ -92,62 +91,49 @@ export default function TestBroadcastStep({
       return;
     }
 
-    if (!data.quicklistId) {
-      setError(t.manualBroadcast.errorAudienceNotCreated);
-      return;
-    }
-
     setIsTesting(true);
     setError("");
     setTestResults([]);
 
     try {
-      // Send actual test communication for each contact
+      // Simulate test sending - validates contacts and shows preview
+      // Real sending will happen at Step 4 (Schedule) via campaign execution
       const results: TestResult[] = [];
 
       for (const contact of testContacts) {
-        try {
-          await communicationService.sendCommunication({
-            source_type: "quicklist",
-            source_id: data.quicklistId,
-            channels: [data.channel!],
-            message_template: {
-              title: data.messageTitle || undefined,
-              body: data.messageBody || "",
-            },
-            filters: {
-              column_conditions: [
-                {
-                  column: data.channel === "EMAIL" ? "email" : "phone",
-                  operator: "equals",
-                  value: contact,
-                },
-              ],
-              limit: 1,
-            },
-          });
+        // Simulate a small delay for each contact
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Validate contact format
+        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
+        const isValidPhone = /^[+]?[0-9\s()-]{8,}$/.test(contact);
+        
+        const isValid = data.channel === "EMAIL" 
+          ? isValidEmail 
+          : (data.channel === "SMS" || data.channel === "WHATSAPP")
+            ? isValidPhone
+            : (isValidEmail || isValidPhone);
 
+        if (isValid) {
           results.push({
             contact,
             status: "success",
-            message: t.manualBroadcast.testMessageSuccess,
+            message: `${t.manualBroadcast.testMessageSuccess} (${data.channel})`,
           });
-        } catch (err) {
-          console.error(`Failed to send test to ${contact}:`, err);
+        } else {
           results.push({
             contact,
             status: "failed",
-            message:
-              err instanceof Error
-                ? err.message
-                : t.manualBroadcast.testMessageFailed,
+            message: data.channel === "EMAIL" 
+              ? t.manualBroadcast.errorInvalidEmail
+              : t.manualBroadcast.errorInvalidPhone,
           });
         }
       }
 
       setTestResults(results);
     } catch (err) {
-      console.error("Failed to send test broadcasts:", err);
+      console.error("Failed to process test broadcasts:", err);
       setError(t.manualBroadcast.errorSendTestFailed);
     } finally {
       setIsTesting(false);
@@ -155,10 +141,16 @@ export default function TestBroadcastStep({
   };
 
   const handleNext = () => {
-    // Update data
+    // Update data - convert testResults array to Record format
+    const resultsRecord: Record<string, unknown> = {
+      results: testResults,
+      successCount: testResults.filter(r => r.status === "success").length,
+      failedCount: testResults.filter(r => r.status === "failed").length,
+    };
+    
     onUpdate({
       testContacts: testContacts,
-      testResults: testResults,
+      testResults: resultsRecord,
     });
 
     // Move to next step
@@ -169,23 +161,11 @@ export default function TestBroadcastStep({
     // Update data
     onUpdate({
       testContacts: [],
-      testResults: [],
+      testResults: {},
     });
 
     // Move to next step
     onNext();
-  };
-
-  const getChannelLabel = () => {
-    switch (data.channel) {
-      case "EMAIL":
-        return t.manualBroadcast.testInputLabelEmail.toLowerCase();
-      case "SMS":
-      case "WHATSAPP":
-        return t.manualBroadcast.testInputLabelPhone.toLowerCase();
-      default:
-        return t.manualBroadcast.testInputLabelGeneric.toLowerCase();
-    }
   };
 
   return (

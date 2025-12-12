@@ -15,13 +15,24 @@ export default function PreviewPanel({
   body,
   sampleData = {},
 }: PreviewPanelProps) {
-  // Replace variables with sample data
+  /**
+   * Replace variables with sample data in the text.
+   * Supports both simple {{key}} and dot notation {{source.field}} formats.
+   * Requirements: 4.5 - WHEN previewing the message THEN the Manual_Broadcast_System 
+   * SHALL show sample data replacing the Template_Variables
+   */
   const replaceVariables = (text: string): string => {
     let result = text;
+    
+    // First, replace variables that match keys in sampleData
     Object.keys(sampleData).forEach((key) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, "g");
-      result = result.replace(regex, sampleData[key] || `{{${key}}}`);
+      // Escape special regex characters in the key (especially dots)
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, "g");
+      const value = sampleData[key];
+      result = result.replace(regex, value != null ? String(value) : `{{${key}}}`);
     });
+    
     return result;
   };
 
